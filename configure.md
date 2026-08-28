@@ -2,11 +2,8 @@
 ## FASE 1
 Per effettuare una corretta configurazione del dispositivo esp32:
 
- - per iniziare è necessario installare sul pc i driver:  [Download driver per esp32](www.micropython.org/download/);
- - per essere sicuri di aver effettuato l'installazione dei driver senza problemi, premere "windows + x" e 
-   selezionare la voce "Gestione dispositivi": se l'installazione è andata a buon fine allora si vedrà una 
-   voce dedicata sulla porta usata (ad esempio a me in corrispondenza della COM5 vedo "Silicon Labs CP210x
-   USB to UART Bridge");
+ - prima di iniziare "windows + x", "gestione dispositivi" e vedete se compare un errore per un dispositivo di cui non è installato il driver: in tal caso inserite quella dicitura sul motore di ricerca e scaricate il driver previsto.
+ - per essere sicuri di aver effettuato l'installazione dei driver senza problemi, premere "windows + x" e selezionare la voce "Gestione dispositivi": se l'installazione è andata a buon fine allora si vedrà una voce dedicata sulla porta usata (ad esempio a me in corrispondenza della COM5 vedo "Silicon Labs CP210x USB to UART Bridge");
  <details>
   <summary>ulteriore conferma la si può ottenere con **Arduino IDE**, oppure con putty.</summary>
 
@@ -47,4 +44,9 @@ Per effettuare una corretta configurazione del dispositivo esp32:
     conda create -n pr_esp32 python
     conda activate pr_esp32
     conda install conda-forge::esptool
+    esptool.py --port PORTNAME erase-flash
+    // dove portname va sostituito con il nome della porta
+    esptool.py --baud 460800 write_flash 0x1000 ESP32_BOARD_NAME-DATE-VERSION.bin
+    // il file esp32_board ecc ecc. sarebbe il firmware che va scaricato dal sito
+    // micropython.org/download/
   ```
