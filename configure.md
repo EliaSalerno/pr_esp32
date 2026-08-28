@@ -1,5 +1,5 @@
 # Installazione
-
+## FASE 1
 Per effettuare una corretta configurazione del dispositivo esp32:
 
  - per iniziare è necessario installare sul pc i driver:  [Download driver per esp32](www.micropython.org/download/);
@@ -28,3 +28,23 @@ Per effettuare una corretta configurazione del dispositivo esp32:
  Se durante il tentativo di configurazione il dispositivo resta nascosto o non reperibile probabilmente si sta usando un cavo errato che non permette lo scambio di informazioni tra l'esp e il pc, ma solo il caricamento di una batteria.
 
 ```
+
+## FASE 2
+
+ - una volta installati i driver dobbiamo provvedere a sostiuire il firmware interno dell'esp dato che non è compatibile con micropython;
+  - per fare ciò possiamo usare un ambiente virtuale realizzato con anaconda (o per chi volesse con il terminale di visual studio code);<br>
+
+  Prima bisogna installare anaconda (può bastare la versione [miniconda](https://www.anaconda.com/download/success))
+
+  <details>
+   <summary> Miniconda immagine sito</summary>
+  <img src="./img/Miniconda.bmp" width="400">
+  </details>
+
+  Una volta effettuata l'installazione aprire il "Anaconda Prompt" e digitare i seguenti comandi:
+
+  ```
+    conda create -n pr_esp32 python
+    conda activate pr_esp32
+    conda install conda-forge::esptool
+  ```
