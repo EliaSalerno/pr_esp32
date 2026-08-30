@@ -70,8 +70,8 @@ direttamente nell'esp32:
  // questo lo esegue direttamente nel dispositivo
 ```
 
-
-Per puro esempio condivido con voi il file condiviso:
+<details>
+<summart>Per puro esempio condivido con voi il file condiviso:</summary>
 
 ```python
 import network
@@ -111,3 +111,5 @@ if __name__ == "__main__":
     PASSWORD = "TUA_PASSWORD"
     connect_wifi(SSID, PASSWORD)
 ```
+
+</details>
