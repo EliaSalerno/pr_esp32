@@ -50,3 +50,64 @@ Per effettuare una corretta configurazione del dispositivo esp32:
     // il file esp32_board ecc ecc. sarebbe il firmware che va scaricato dal sito
     // micropython.org/download/
   ```
+
+## FASE 3
+
+Molte volte da repl può risultare ostico configurare il dispositivo. Questo per diverse motivazioni:
+ - se volessimo compiare istruzioni dal web le indentazioni sarebbero un ostacolo;
+ - eventuali caratteri potrebbero sporcare il codice;
+ - un istruzione potrebbe non dare il risultato voluto e noi non ce ne renderemo conto;
+In molti di questi casi il repl tende a chiudere la connessione. 
+
+Per ovviare a questo problema possiamo scrivere in un file .py le istruzioni da svolgere, copiarlo nella memoria ed eseguirlo 
+direttamente nell'esp32:
+
+```
+ // file di configurazione del wi-fi
+  mpremote connect portausata fs cp wifi_config.py :wifi_config.py
+ // questo comando copia il file 
+  mpremote connect portausata run wifi_config.py
+ // questo lo esegue direttamente nel dispositivo
+```
+
+
+Per puro esempio condivido con voi il file condiviso:
+
+```python
+import network
+import time
+
+def connect_wifi(ssid, password, timeout=15):
+    wlan = network.WLAN(network.STA_IF)
+
+    if wlan.isconnected():
+        print("Gi├á connesso:", wlan.ifconfig())
+        return wlan
+
+    wlan.active(False)
+    time.sleep(1)
+    wlan.active(True)
+    time.sleep(1)
+    # queste quattro istruzioni apparentemente inutili servono a sospendere momentaneamente il tentativo di connessione
+    # questo per dare il tempo all'interfaccia di completare le varie operazioni, per poi fare la connessione.
+
+    print(f"Connessione a {ssid}...")
+    wlan.connect(ssid, password)
+
+    start = time.time()
+    while not wlan.isconnected():
+        if time.time() - start > timeout:
+            print("Timeout: connessione fallita")
+            return wlan
+        time.sleep(0.5)
+        print(".", end="")
+
+    print("\nConnesso!")
+    print("Config di rete:", wlan.ifconfig())
+    return wlan
+
+if __name__ == "__main__":
+    SSID = "TUO_SSID"
+    PASSWORD = "TUA_PASSWORD"
+    connect_wifi(SSID, PASSWORD)
+```
