@@ -71,7 +71,7 @@ direttamente nell'esp32:
 ```
 
 <details>
-<summart>Per puro esempio condivido con voi il file condiviso:</summary>
+<summary>Per puro esempio condivido con voi il file condiviso:</summary>
 
 ```python
 import network
