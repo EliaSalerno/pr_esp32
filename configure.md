@@ -81,7 +81,7 @@ def connect_wifi(ssid, password, timeout=15):
     wlan = network.WLAN(network.STA_IF)
 
     if wlan.isconnected():
-        print("Gi├á connesso:", wlan.ifconfig())
+        print("Giá connesso:", wlan.ifconfig())
         return wlan
 
     wlan.active(False)
