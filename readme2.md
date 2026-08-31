@@ -15,6 +15,7 @@ Il repository è organizzato in cartelle per fasi di apprendimento progressive:
 | `step1/` | `general_board_control.md`, `wifi_config.py` | Controllo della scheda e configurazione di rete |
 | `step2/` | `blink.py` | Primo programma: lampeggio del LED |
 | `step3/` | `web_server.py`, `microdot/` | Web server con Microdot |
+| `step4/` | `sleep.py`, `schema.png` | Deep sleep e risveglio esterno |
 | `img/` | screenshot e guide visive | Supporto visuale (driver, Thonny, Miniconda, protocolli) |
 
 Le guide principali trasversali sono:
@@ -228,7 +229,38 @@ Metodi descritti:
 
 ---
 
-## 7. Guida introduttiva completa (`firstwork.md`)
+## 7. Step 4 — Deep sleep e risveglio esterno (cartella `step4/`)
+
+Guida pratica al risparmio energetico tramite **deep sleep** e al risveglio tramite segnale esterno.
+
+### 7.1 `sleep.py`
+
+Script che mette la scheda in deep sleep e la risveglia con un pulsante sul **GPIO4**:
+
+```python
+import machine
+import esp32
+
+pin = machine.Pin(4, machine.Pin.IN, machine.Pin.PULL_UP)
+
+esp32.wake_on_ext0(pin=pin, level=esp32.WAKEUP_ALL_LOW)
+
+print("Vado in deep sleep, premi il pulsante su GPIO4 per svegliarmi")
+machine.deepsleep()
+```
+
+Concetti introdotti:
+- **`machine.Pin` in modalità input** con **pull-up interno** (`Pin.PULL_UP`) per il pulsante
+- **`esp32.wake_on_ext0()`** per configurare il risveglio da un segnale esterno su un pin specifico, con livello di trigger `esp32.WAKEUP_ALL_LOW` (risveglio quando il pin va a livello basso)
+- **`machine.deepsleep()`** per spegnere la scheda riducendo al minimo i consumi fino al risveglio
+
+### 7.2 `schema.png`
+
+Schema di collegamento del pulsante/resistenza al GPIO4, a supporto visivo dei montaggi descritti.
+
+---
+
+## 8. Guida introduttiva completa (`firstwork.md`)
 
 Documento a uso delle lezioni, copre l'intero percorso:
 
@@ -245,7 +277,7 @@ Documento a uso delle lezioni, copre l'intero percorso:
 
 ---
 
-## 8. Riepilogo dei comandi `mpremote`
+## 9. Riepilogo dei comandi `mpremote`
 
 | Comando | Cosa fa |
 |---|---|
@@ -264,7 +296,7 @@ Comandi `esptool`:
 
 ---
 
-## 9. Problemi comuni e soluzioni
+## 10. Problemi comuni e soluzioni
 
 | Problema | Causa probabile | Soluzione |
 |---|---|---|
@@ -278,7 +310,7 @@ Comandi `esptool`:
 
 ---
 
-## 10. Nota di sicurezza (importante)
+## 11. Nota di sicurezza (importante)
 
 All'interno del repository sono presenti **credenziali WiFi reali** (SSID e password) in chiaro nei file:
 - `step1/wifi_config.py`
@@ -290,7 +322,7 @@ All'interno del repository sono presenti **credenziali WiFi reali** (SSID e pass
 
 ---
 
-## 11. Risorse utili
+## 12. Risorse utili
 
 - Documentazione ufficiale MicroPython: https://docs.micropython.org
 - Download firmware: https://micropython.org/download
