@@ -1,3 +1,9 @@
+# This file is executed on every boot (including wake-boot from deepsleep)
+#import esp
+#esp.osdebug(None)
+#import webrepl
+#webrepl.start()
+
 import network
 import time
 
@@ -5,7 +11,7 @@ def connect_wifi(ssid, password, timeout=15):
     wlan = network.WLAN(network.STA_IF)
     
     if wlan.isconnected():
-        print("Già connesso:", wlan.ifconfig())
+        print("Era connesso:", wlan.ifconfig())
         return wlan
 
     wlan.active(False)
