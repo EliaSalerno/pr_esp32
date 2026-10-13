@@ -35,6 +35,6 @@ def connect_wifi(ssid, password, timeout=15):
     return wlan
 
 if __name__ == "__main__":
-    SSID = "TP-Link_4CF8"
-    PASSWORD = "74610693"
+    SSID = "Greppi-5G"
+    PASSWORD = "withProxy"
     connect_wifi(SSID, PASSWORD)
