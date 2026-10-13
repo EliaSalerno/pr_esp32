@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheda 3 · Rete e Wi-Fi — ESP32 + MicroPython</title>
+<meta name="description" content="Wi-Fi sull'ESP32: connessione manuale e automatica con boot.py, modalità Access Point, MAC address, scan, IP statico, DNS e test di connettività con mpremote.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">ESP</span>
+      <span>ESP32 · MicroPython<small>Guida passo-passo</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigazione principale">
+      <a href="index.html">Home</a>
+      <a href="teoria.html">Teoria</a>
+      <a href="configurazione.html">Configurazione</a>
+      <a href="rete.html" aria-current="page">Rete</a>
+      <a href="micropython.html">MicroPython</a>
+      <a href="esempi.html">Esempi</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="index.html">Home</a> / Scheda 3 — Rete e Wi-Fi</p>
+
+  <div class="page-grid">
+    <aside class="side">
+      <h4>In questa scheda</h4>
+      <a href="#manuale">Connessione manuale</a>
+      <a href="#automatica">Connessione automatica</a>
+      <a href="#comandi">Comandi di rete</a>
+      <a href="#mac">MAC e ID chip</a>
+      <a href="#stato">Stato e IP</a>
+      <a href="#scan">Scan delle reti</a>
+      <a href="#hostname">Hostname</a>
+      <a href="#ap">Modalità Access Point</a>
+      <a href="#test">Test di rete</a>
+      <a href="#problemi-rete">Problemi comuni</a>
+    </aside>
+
+    <div>
+      <h1>Rete e Wi-Fi</h1>
+      <p class="lead">
+        L'ESP32 nasce per l'IoT, quindi la rete è il suo pane quotidiano. Vediamo tutte le modalità
+        viste nel repository: connessione <strong>manuale</strong> "a comando", connessione
+        <strong>automatica</strong> all'avvio tramite <code class="inline">boot.py</code>, modalità
+        <strong>Access Point</strong> e i comandi di diagnostica.
+      </p>
+
+      <div class="callout warn">
+        <span class="tag">Regola d'oro</span>
+        <p>L'ESP32 supporta solo reti <strong>a 2.4 GHz</strong>: non si connette alle reti a 5 GHz.</p>
+      </div>
+
+      <!-- MANUALE -->
+      <h2 id="manuale">Connessione Wi-Fi manuale</h2>
+      <p>
+        Colleghiamo l'ESP32 alla rete <strong>a comando</strong>, senza connessione automatica
+        all'avvio. Utile in fase di test o quando si vuole controllare esattamente quando la scheda
+        si collega.
+      </p>
+      <p><strong>Prerequisito:</strong> il file <code class="inline">wifi_config.py</code> deve essere presente sulla scheda. Verifica con <code class="inline">mpremote connect COM5 fs ls</code>; se manca, copialo con <code class="inline">fs cp wifi_config.py :wifi_config.py</code>.</p>
+
+      <div class="code-head"><span>wifi_config.py</span></div>
+      <pre><code>import network
+import time
+
+def connect_wifi(ssid, password, timeout=15):
+    wlan = network.WLAN(network.STA_IF)
+
+    if wlan.isconnected():
+        print("Già connesso:", wlan.ifconfig())
+        return wlan
+
+    wlan.active(False)
+    time.sleep(1)
+    wlan.active(True)
+    time.sleep(1)  # dà tempo all'interfaccia di stabilizzarsi
+
+    print(f"Connessione a {ssid}...")
+    wlan.connect(ssid, password)
+
+    start = time.time()
+    while not wlan.isconnected():
+        if time.time() - start > timeout:
+            print("Timeout: connessione fallita")
+            return wlan
+        time.sleep(0.5)
+        print(".", end="")
+
+    print("\nConnesso!")
+    print("Config di rete:", wlan.ifconfig())
+    return wlan</code></pre>
+
+      <div class="callout info">
+        <span class="tag">Perché i due time.sleep(1)</span>
+        <p>Quelle quattro istruzioni apparentemente inutili (<code class="inline">active(False)</code> → pausa → <code class="inline">active(True)</code> → pausa) sospendono momentaneamente il tentativo di connessione, dando allo stack Wi-Fi il tempo di completare le proprie operazioni prima di connettersi.</p>
+      </div>
+
+      <p>Con il file salvato come <code class="inline">wifi_config.py</code> (<strong>non</strong> <code class="inline">boot.py</code> né <code class="inline">main.py</code>), la scheda <strong>non</strong> si connette da sola: il blocco <code class="inline">if __name__ == "__main__":</code> scatta solo quando il file è eseguito come script principale, non quando viene importato.</p>
+
+      <h3>Metodo 1 — comando singolo (consigliato)</h3>
+      <pre class="term"><code>mpremote connect COM5 exec "import wifi_config; wifi_config.connect_wifi('NOME_RETE', 'PASSWORD_RETE')"</code></pre>
+      <p class="small muted">Vedrai l'output in tempo reale: i puntini di attesa, poi "Connesso!" con l'IP assegnato.</p>
+
+      <h3>Metodo 2 — dalla REPL interattiva</h3>
+      <pre class="term"><code>mpremote connect COM5
+&gt;&gt;&gt; import wifi_config
+&gt;&gt;&gt; wifi_config.connect_wifi('NOME_RETE', 'PASSWORD_RETE')</code></pre>
+      <p class="small muted">Per uscire dalla REPL: <kbd>Ctrl</kbd> + <kbd>]</kbd>.</p>
+
+      <div class="callout tip">
+        <span class="tag">Import in cache</span>
+        <p>Un secondo <code class="inline">import wifi_config</code> nella stessa sessione <strong>non</strong> riesegue il modulo (Python lo tiene in cache). Richiama direttamente la funzione <code class="inline">connect_wifi(...)</code>, oppure riapri la connessione.</p>
+      </div>
+
+      <h3>Verificare lo stato in qualsiasi momento</h3>
+      <pre class="term"><code>mpremote connect COM5 exec "import network; wlan = network.WLAN(network.STA_IF); print('Connesso:', wlan.isconnected()); print('IP:', wlan.ifconfig())"</code></pre>
+      <p class="small muted">Se l'IP è tutto a zero (<code class="inline">0.0.0.0</code>), la scheda non è connessa in quel momento.</p>
+
+      <!-- AUTOMATICA -->
+      <h2 id="automatica">Connessione Wi-Fi automatica all'avvio</h2>
+      <p>Ad ogni accensione o reset, MicroPython esegue automaticamente, in ordine:</p>
+      <ol>
+        <li><strong>boot.py</strong> — per configurazioni di basso livello (Wi-Fi, impostazioni hardware).</li>
+        <li><strong>main.py</strong> — per il programma applicativo vero e proprio.</li>
+      </ol>
+      <p>Per la connessione automatica, il file va salvato come <strong><code class="inline">boot.py</code></strong>.</p>
+
+      <div class="callout warn">
+        <span class="tag">Differenza chiave</span>
+        <p>Nella versione automatica <strong>non serve</strong> il blocco <code class="inline">if __name__ == "__main__":</code>: in <code class="inline">boot.py</code> tutto il file viene eseguito linearmente all'avvio, comprese le ultime righe che chiamano <code class="inline">connect_wifi(...)</code>.</p>
+      </div>
+
+      <p>Lo script è lo stesso, con le credenziali inserite direttamente nel file:</p>
+      <pre><code># ... funzione connect_wifi identica a prima ...
+
+# Esecuzione automatica all'avvio (nessun blocco if __name__)
+SSID = "NOME_RETE"
+PASSWORD = "PASSWORD_RETE"
+connect_wifi(SSID, PASSWORD)</code></pre>
+
+      <p>Copialo sulla scheda <strong>rinominandolo</strong> <code class="inline">boot.py</code>:</p>
+      <pre class="term"><code>mpremote connect COM5 fs cp wifi_config.py :boot.py</code></pre>
+
+      <ol class="steps">
+        <li><strong>Verifica</strong>Fai un reset fisico (pulsante <strong>EN/RST</strong>) e collegati subito alla REPL per vedere l'output: <code class="inline">Connessione a NOME_RETE...</code> → <code class="inline">Connesso!</code> con l'IP.</li>
+        <li><strong>Controlla l'IP senza rientrare in REPL</strong><code class="inline">mpremote connect COM5 exec "import network; print(network.WLAN(network.STA_IF).ifconfig())"</code></li>
+        <li><strong>Attenzione al boot.py esistente</strong>Se c'è già, <code class="inline">fs cp</code> lo sovrascrive <em>senza avviso</em>. Fai un backup: <code class="inline">mpremote connect COM5 fs cp :boot.py boot_backup.py</code></li>
+        <li><strong>Per disattivare l'automatismo</strong>Elimina il file: <code class="inline">mpremote connect COM5 fs rm :boot.py</code></li>
+        <li><strong>Combina con main.py</strong>Aggiungi l'applicazione separata: <code class="inline">mpremote connect COM5 fs cp web_server.py :main.py</code></li>
+      </ol>
+      <p class="small muted">Così <code class="inline">boot.py</code> gestisce solo la rete e <code class="inline">main.py</code> il comportamento dell'applicazione.</p>
+
+      <!-- COMANDI DI RETE -->
+      <h2 id="comandi">Comandi di rete con <code class="inline">mpremote</code></h2>
+      <p class="lead">Guida rapida per leggere il MAC address e gestire/ispezionare la rete della scheda.</p>
+
+      <h3>Installazione e connessione</h3>
+      <pre class="term"><code>pip install mpremote
+mpremote devs                 # elenca porte e schede
+mpremote connect COM3         # Windows
+mpremote connect /dev/ttyUSB0 # Linux
+mpremote connect /dev/cu.usbserial-0001  # macOS</code></pre>
+      <div class="callout info">
+        <span class="tag">Nota sul quoting</span>
+        <p>Su Windows usa <strong>virgolette doppie all'esterno e singole all'interno</strong>. Per codice lungo è meglio salvare uno script <code class="inline">.py</code> ed eseguirlo con <code class="inline">mpremote run script.py</code>.</p>
+      </div>
+
+      <!-- MAC -->
+      <h2 id="mac">MAC address e ID univoco</h2>
+      <div class="code-head"><span>MAC Wi-Fi station (leggibile)</span></div>
+      <pre class="term"><code>mpremote exec "import network, ubinascii; print(ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac'), ':').decode())"</code></pre>
+      <p class="small muted">Output di esempio: <code class="inline">a4:cf:12:34:56:78</code></p>
+
+      <div class="code-head"><span>MAC in byte grezzi</span></div>
+      <pre class="term"><code>mpremote exec "import network; print(network.WLAN().config('mac'))"</code></pre>
+      <p class="small muted">Output di esempio: <code class="inline">b'\xa4\xcf\x124Vx'</code></p>
+
+      <div class="code-head"><span>MAC dell'Access Point</span></div>
+      <pre class="term"><code>mpremote exec "import network, ubinascii; print(ubinascii.hexlify(network.WLAN(network.AP_IF).config('mac'), ':').decode())"</code></pre>
+      <p class="small muted">Il MAC dell'AP è diverso da quello della station (di solito l'ultimo byte è incrementato).</p>
+
+      <div class="code-head"><span>MAC Bluetooth (BLE)</span></div>
+      <pre class="term"><code>mpremote exec "import bluetooth; ble = bluetooth.BLE(); ble.active(True); print(ble.config('mac'))"</code></pre>
+      <p class="small muted">Restituisce una tupla <code class="inline">(tipo_indirizzo, indirizzo)</code>. Richiede firmware recente con BLE abilitato.</p>
+
+      <div class="code-head"><span>ID univoco del chip</span></div>
+      <pre class="term"><code>mpremote exec "import machine, ubinascii; print(ubinascii.hexlify(machine.unique_id()).decode())"</code></pre>
+      <p class="small muted">Su ESP32 coincide in genere con il MAC della station (senza i due punti).</p>
+
+      <!-- STATO -->
+      <h2 id="stato">Stato dell'interfaccia, IP, netmask, gateway, DNS</h2>
+      <div class="code-head"><span>Attivare la station</span></div>
+      <pre class="term"><code>mpremote exec "import network; w = network.WLAN(network.STA_IF); w.active(True); print(w.active())"</code></pre>
+      <p class="small muted">Alcune chiamate (<code class="inline">scan</code>, <code class="inline">config('mac')</code>) richiedono l'interfaccia attiva.</p>
+
+      <div class="code-head"><span>Connessa? / Codice di stato / RSSI</span></div>
+      <pre class="term"><code>mpremote exec "import network; print(network.WLAN(network.STA_IF).isconnected())"
+mpremote exec "import network; print(network.WLAN(network.STA_IF).status())"
+mpremote exec "import network; print(network.WLAN(network.STA_IF).status('rssi'))"</code></pre>
+      <p class="small muted">
+        Stati utili: <code class="inline">STAT_IDLE</code>, <code class="inline">STAT_CONNECTING</code>,
+        <code class="inline">STAT_GOT_IP</code>, <code class="inline">STAT_WRONG_PASSWORD</code>,
+        <code class="inline">STAT_NO_AP_FOUND</code>, <code class="inline">STAT_CONNECT_FAIL</code>.
+        L'RSSI è in dBm (es. <code class="inline">-55</code> ottimo, <code class="inline">-85</code> debole).
+      </p>
+
+      <div class="code-head"><span>IP, netmask, gateway, DNS</span></div>
+      <pre class="term"><code>mpremote exec "import network; print(network.WLAN(network.STA_IF).ifconfig())"</code></pre>
+      <p class="small muted">Restituisce una tupla <code class="inline">(ip, netmask, gateway, dns)</code>, es. <code class="inline">('192.168.1.45', '255.255.255.0', '192.168.1.1', '192.168.1.1')</code>.</p>
+
+      <div class="code-head"><span>Impostare un IP statico</span></div>
+      <pre class="term"><code>mpremote exec "import network; w = network.WLAN(network.STA_IF); w.ifconfig(('192.168.1.50','255.255.255.0','192.168.1.1','8.8.8.8'))"</code></pre>
+
+      <!-- SCAN -->
+      <h2 id="scan">Scansione delle reti Wi-Fi</h2>
+      <pre class="term"><code>mpremote exec "import network; w = network.WLAN(network.STA_IF); w.active(True); [print(r) for r in w.scan()]"</code></pre>
+      <p>Ogni risultato è una tupla: <code class="inline">(ssid, bssid, canale, rssi, authmode, hidden)</code>. Versione più leggibile:</p>
+      <pre class="term"><code>mpremote exec "import network, ubinascii; w = network.WLAN(network.STA_IF); w.active(True); [print(r[0].decode(), '|', ubinascii.hexlify(r[1], ':').decode(), '| ch', r[2], '|', r[3], 'dBm') for r in w.scan()]"</code></pre>
+      <p class="small muted">Valori di <code class="inline">authmode</code>: 0 open, 1 WEP, 2 WPA-PSK, 3 WPA2-PSK, 4 WPA/WPA2-PSK.</p>
+
+      <!-- HOSTNAME -->
+      <h2 id="hostname">Hostname</h2>
+      <pre class="term"><code>mpremote exec "import network; print(network.hostname())"
+mpremote exec "import network; network.hostname('esp32-lab')"</code></pre>
+      <p class="small muted">L'hostname va impostato <strong>prima</strong> di connettersi. Su versioni più vecchie: <code class="inline">w.config(dhcp_hostname='esp32-lab')</code>.</p>
+
+      <!-- AP -->
+      <h2 id="ap">Modalità Access Point</h2>
+      <p>L'ESP32 può creare una propria rete Wi-Fi alla quale collegarsi direttamente:</p>
+      <pre class="term"><code>mpremote exec "import network; ap = network.WLAN(network.AP_IF); ap.active(True); ap.config(essid='ESP32-AP', password='12345678', authmode=network.AUTH_WPA2_PSK); print(ap.ifconfig())"</code></pre>
+      <p class="small muted">Il tipico IP dell'AP è <code class="inline">192.168.4.1</code>.</p>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Azione</th><th>Comando</th></tr></thead>
+        <tbody>
+          <tr><td>Vedere la configurazione AP</td><td><code class="inline">ap.config('essid')</code>, <code class="inline">ap.config('channel')</code>, <code class="inline">ap.ifconfig()</code></td></tr>
+          <tr><td>Elencare i client collegati</td><td><code class="inline">network.WLAN(network.AP_IF).status('stations')</code></td></tr>
+          <tr><td>Spegnere l'AP</td><td><code class="inline">network.WLAN(network.AP_IF).active(False)</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <!-- TEST -->
+      <h2 id="test">Test di rete</h2>
+      <div class="callout info">
+        <span class="tag">Non c'è ping</span>
+        <p>MicroPython <strong>non ha un comando <code class="inline">ping</code></strong> integrato. Ecco le alternative.</p>
+      </div>
+      <div class="code-head"><span>Risoluzione DNS</span></div>
+      <pre class="term"><code>mpremote exec "import socket; print(socket.getaddrinfo('google.com', 80)[0][-1])"</code></pre>
+      <div class="code-head"><span>Test di connessione TCP</span></div>
+      <pre class="term"><code>mpremote exec "import socket; s = socket.socket(); s.settimeout(5); s.connect(('example.com', 80)); print('OK'); s.close()"</code></pre>
+      <div class="code-head"><span>Richiesta HTTP (libreria requests)</span></div>
+      <pre class="term"><code>mpremote mip install requests
+mpremote exec "import requests; r = requests.get('http://example.com'); print(r.status_code); r.close()"</code></pre>
+      <div class="code-head"><span>Sincronizzare l'ora via NTP</span></div>
+      <pre class="term"><code>mpremote exec "import ntptime; ntptime.settime(); import time; print(time.localtime())"</code></pre>
+      <p class="small muted">L'ora è in UTC. Richiede la scheda connessa a Internet.</p>
+
+      <h3>Altre opzioni di rete</h3>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Opzione</th><th>Comando / Note</th></tr></thead>
+        <tbody>
+          <tr><td>Potenza di trasmissione</td><td><code class="inline">w.config('txpower')</code></td></tr>
+          <tr><td>Risparmio energetico Wi-Fi</td><td><code class="inline">w.config(pm=network.WLAN.PM_NONE)</code></td></tr>
+          <tr><td>Valori power mode</td><td><code class="inline">PM_NONE</code>, <code class="inline">PM_PERFORMANCE</code>, <code class="inline">PM_POWERSAVE</code> (con PM_NONE latenza minore, consumo maggiore)</td></tr>
+          <tr><td>Disconnettersi</td><td><code class="inline">network.WLAN(network.STA_IF).disconnect()</code></td></tr>
+          <tr><td>Spegnere il Wi-Fi</td><td><code class="inline">network.WLAN(network.STA_IF).active(False)</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <!-- PROBLEMI -->
+      <h2 id="problemi-rete">Problemi comuni</h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Problema</th><th>Causa</th><th>Soluzione</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">could not read file</code></td><td>Hai usato <code class="inline">run</code> invece di <code class="inline">exec</code>, o il file non è nella cartella corrente</td><td>Usa <code class="inline">exec "import wifi_config; ..."</code></td></tr>
+          <tr><td><code class="inline">OSError: Wifi Internal State Error</code></td><td>Stack Wi-Fi non stabilizzato o interfaccia non attiva</td><td>Reset fisico, verifica i due <code class="inline">time.sleep(1)</code> e <code class="inline">w.active(True)</code></td></tr>
+          <tr><td><code class="inline">could not enter raw repl</code></td><td>Porta seriale occupata</td><td>Chiudi gli altri programmi sulla porta</td></tr>
+          <tr><td>IP a <code class="inline">0.0.0.0</code></td><td>Connessione fallita o non completata</td><td>Rilancia lo script e controlla l'output "Connesso!"</td></tr>
+          <tr><td>La scheda non si connette all'avvio</td><td>Il file non si chiama esattamente <code class="inline">boot.py</code></td><td>Verifica con <code class="inline">fs ls</code></td></tr>
+          <tr><td>REPL "intrappolata" dal boot</td><td><code class="inline">boot.py</code> riparte ad ogni reset</td><td>Premi Ctrl+C appena vedi il banner, o tieni premuto BOOT durante il reset</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="callout danger">
+        <span class="tag">Sicurezza</span>
+        <p>Nel repository sono presenti credenziali Wi-Fi reali in chiaro in <code class="inline">step1/wifi_config.py</code> e <code class="inline">step3/web_server.py</code>: non dovrebbero essere versionate. Sostituiscile con placeholder o leggile da file esclusi dal controllo di versione.</p>
+      </div>
+
+      <nav class="pager">
+        <a href="configurazione.html"><span class="dir">← Indietro</span>Configurazione dell'ESP</a>
+        <a href="micropython.html"><span class="dir">Avanti →</span>MicroPython</a>
+      </nav>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p>Materiale didattico ESP32 + MicroPython · sito statico senza JavaScript</p>
+  <p>
+    <a href="index.html">Home</a> ·
+    <a href="teoria.html">Teoria</a> ·
+    <a href="configurazione.html">Configurazione</a> ·
+    <a href="rete.html">Rete</a> ·
+    <a href="micropython.html">MicroPython</a> ·
+    <a href="esempi.html">Esempi</a>
+  </p>
+</footer>
+
+</body>
+</html>

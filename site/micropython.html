@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheda 4 · MicroPython — ESP32 + MicroPython</title>
+<meta name="description" content="Cos'è MicroPython, la REPL, i moduli machine ed esp, la differenza tra boot.py e main.py. Fondamenti per programmare l'ESP32 in Python.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">ESP</span>
+      <span>ESP32 · MicroPython<small>Guida passo-passo</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigazione principale">
+      <a href="index.html">Home</a>
+      <a href="teoria.html">Teoria</a>
+      <a href="configurazione.html">Configurazione</a>
+      <a href="rete.html">Rete</a>
+      <a href="micropython.html" aria-current="page">MicroPython</a>
+      <a href="esempi.html">Esempi</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="index.html">Home</a> / Scheda 4 — MicroPython</p>
+
+  <div class="page-grid">
+    <aside class="side">
+      <h4>In questa scheda</h4>
+      <a href="#cos-e">Cos'è MicroPython</a>
+      <a href="#repl">La REPL</a>
+      <a href="#moduli">Moduli base</a>
+      <a href="#pin">Pin e GPIO</a>
+      <a href="#avvio">boot.py e main.py</a>
+      <a href="#buone">Buone pratiche</a>
+      <a href="#approfondimenti-mp">Approfondimenti</a>
+    </aside>
+
+    <div>
+      <h1>MicroPython</h1>
+      <p class="lead">
+        MicroPython è l'implementazione di Python 3 ottimizzata per girare su microcontrollori con
+        poca memoria e potenza, come l'ESP32. Permette di scrivere Python "vero" per controllare pin,
+        sensori, motori, display e connettersi al Wi-Fi, senza dover imparare C/C++.
+      </p>
+
+      <h2 id="cos-e">Cos'è MicroPython</h2>
+      <div class="card">
+        <p>
+          MicroPython è un <strong>linguaggio completo ma essenziale</strong>: mantiene la sintassi e
+          gran parte della libreria standard di Python, e aggiunge moduli specifici per l'hardware.
+          Sull'ESP32 i due moduli che userai di più sono <code class="inline">machine</code> (pin,
+          bus, timer, sleep) ed <code class="inline">esp</code> (accesso a basso livello al chip).
+        </p>
+      </div>
+
+      <div class="grid cols-3">
+        <div class="card"><h4>Vantaggi</h4><p class="small">Nessuna compilazione: scrivi ed esegui subito.</p></div>
+        <div class="card"><h4>Comodo</h4><p class="small">Editing via REPL, seriale o trasferimento file.</p></div>
+        <div class="card"><h4>Potente</h4><p class="small">Accesso diretto a GPIO, PWM, ADC, I2C, SPI.</p></div>
+      </div>
+
+      <h2 id="repl">La REPL</h2>
+      <p>
+        La <strong>REPL</strong> (Read-Eval-Print Loop) è il terminale interattivo di MicroPython:
+        digiti un'istruzione e la esegui immediatamente. È su UART0 (TX=GPIO1, RX=GPIO3), a 115200 baud.
+      </p>
+      <pre class="term"><code>mpremote connect COM3</code></pre>
+      <p>Dovresti vedere un banner tipo:</p>
+      <pre class="term"><code>MicroPython v1.29.0 on 2026-08-24; ESP32 module
+Type "help()" for more information.
+&gt;&gt;&gt; _</code></pre>
+
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Scorciatoia</th><th>Effetto</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd></td><td>Interrompe lo script in esecuzione</td></tr>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td><td>Soft reset della scheda</td></tr>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td><td>Paste mode: incolla un blocco di codice</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Completamento automatico dei nomi</td></tr>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>]</kbd></td><td>Esce dalla REPL di mpremote</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">Perché preferire i file .py</span>
+        <p>Incollare più righe nella REPL è rischioso: le indentazioni si rompono, i caratteri
+        possono sporcarsi e la connessione può chiudersi. Per programmi veri usa un file
+        <code class="inline">.py</code> e trasferiscilo con <code class="inline">mpremote fs cp</code>.</p>
+      </div>
+
+      <h2 id="moduli">Moduli base</h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Modulo</th><th>A cosa serve</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">machine</code></td><td>Pin, PWM, ADC, I2C, SPI, UART, Timer, <code class="inline">deepsleep()</code>, <code class="inline">freq()</code>, <code class="inline">unique_id()</code></td></tr>
+          <tr><td><code class="inline">esp</code></td><td>Controllo a basso livello: <code class="inline">osdebug()</code>, flash, <code class="inline">wake_on_ext0()</code></td></tr>
+          <tr><td><code class="inline">esp32</code></td><td>Funzioni specifiche ESP32: deep sleep hold, wake-up, touch</td></tr>
+          <tr><td><code class="inline">network</code></td><td>Wi-Fi station/AP, MAC, IP</td></tr>
+          <tr><td><code class="inline">time</code></td><td><code class="inline">sleep()</code>, <code class="inline">time()</code>, gestione tempi</td></tr>
+          <tr><td><code class="inline">socket</code>, <code class="inline">network</code></td><td>Comunicazione TCP/UDP e Wi-Fi</td></tr>
+          <tr><td><code class="inline">machine.Pin</code></td><td>GPIO: input/output, pull-up/down</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>Prima occhiata al codice</h3>
+      <pre><code>from machine import Pin
+import time
+
+# Un LED collegato al GPIO2
+led = Pin(2, Pin.OUT)
+
+# Un pulsante sul GPIO4 con pull-up interno
+btn = Pin(4, Pin.IN, Pin.PULL_UP)
+
+led.value(1)        # accende
+time.sleep(0.5)
+led.value(0)        # spegne
+print("Stato pulsante:", btn.value())</code></pre>
+
+      <h2 id="pin">Pin e GPIO</h2>
+      <p>I pin disponibili vanno da <code class="inline">0–19</code>, <code class="inline">21–23</code>,
+      <code class="inline">25–27</code>, <code class="inline">32–39</code>. Evita i pin della flash
+      (<code class="inline">6–11</code>, <code class="inline">16</code>, <code class="inline">17</code>).
+      Le <strong>modalità</strong> principali:</p>
+      <ul>
+        <li><code class="inline">Pin.IN</code> — ingresso (sensori, pulsanti)</li>
+        <li><code class="inline">Pin.OUT</code> — uscita (LED, relè)</li>
+        <li><code class="inline">Pin.PULL_UP</code> / <code class="inline">Pin.PULL_DOWN</code> — resistenza interna</li>
+        <li><code class="inline">Pin.OPEN_DRAIN</code> — uscita open-drain</li>
+        <li><code class="inline">machine.Signal</code> — per invertire una logica (LED attivi su livello basso)</li>
+      </ul>
+      <div class="callout info">
+        <span class="tag">Approfondimento</span>
+        <p>Per la mappa completa e sicura dei pin consulta la <a href="teoria.html#pin">scheda Teoria</a> o la <a href="https://docs.micropython.org/en/latest/esp32/quickref.html" target="_blank" rel="noopener">Quick Reference ufficiale</a>.</p>
+      </div>
+
+      <h2 id="avvio">Il ciclo di avvio: <code class="inline">boot.py</code> e <code class="inline">main.py</code></h2>
+      <p>Ad ogni accensione o reset, MicroPython esegue automaticamente <strong>in ordine</strong>:</p>
+      <ol class="steps">
+        <li><strong>boot.py</strong>Configurazione di basso livello: connessione Wi-Fi, impostazioni hardware. Qui il codice viene eseguito <em>linearmente</em> (nessun blocco <code class="inline">if __name__</code>).</li>
+        <li><strong>main.py</strong>Il programma applicativo vero e proprio, eseguito subito dopo il boot.</li>
+      </ol>
+      <div class="callout info">
+        <span class="tag">Combinazione consigliata</span>
+        <p>Metti la connessione Wi-Fi in <code class="inline">boot.py</code> e la logica dell'app (ad es. un web server) in <code class="inline">main.py</code>: codice più ordinato e riutilizzabile. Vedi la <a href="rete.html#automatica">scheda Rete</a>.</p>
+      </div>
+
+      <div class="callout danger">
+        <span class="tag">Se il boot "intrappola" la REPL</span>
+        <p>Se <code class="inline">boot.py</code> o <code class="inline">main.py</code> contengono un ciclo infinito, premi <kbd>Ctrl</kbd>+<kbd>C</kbd> appena appare il banner, oppure tieni premuto <strong>BOOT</strong> durante il reset per saltare l'esecuzione.</p>
+      </div>
+
+      <h2 id="buone">Buone pratiche</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h4>Organizza il codice</h4>
+          <p class="small">Riutilizza funzioni in file separati (<code class="inline">wifi_config.py</code>) e importali dove servono, invece di duplicare il codice.</p>
+        </div>
+        <div class="card">
+          <h4>Gestisci gli errori</h4>
+          <p class="small">Usa <code class="inline">try/except</code>, in particolare per rete e sensori: un errore non gestito interrompe lo script.</p>
+        </div>
+        <div class="card">
+          <h4>Attento alla memoria</h4>
+          <p class="small">L'ESP32 ha poca RAM: evita grandi strutture e import non necessari. Salva i dati in flash con giudizio (<code class="inline">open()</code>).</p>
+        </div>
+        <div class="card">
+          <h4>Sicurezza</h4>
+          <p class="small">Non scrivere mai password reali nel codice condiviso/versionato: usa placeholder o file esclusi.</p>
+        </div>
+      </div>
+      <pre><code>import network
+import time
+
+def connetti(ssid, password, timeout=15):
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(ssid, password)
+    t = 0
+    while not wlan.isconnected() and t &lt; timeout:
+        time.sleep(1)
+        t += 1
+    if not wlan.isconnected():
+        print("Connessione fallita")
+    return wlan
+
+try:
+    wlan = connetti("NOME_RETE", "PASSWORD_RETE")
+    print("IP:", wlan.ifconfig())
+except Exception as e:
+    print("Errore:", e)</code></pre>
+
+      <h2 id="approfondimenti-mp">Approfondimenti</h2>
+      <details>
+        <summary>Differenze con Python "desktop" (CPython)</summary>
+        <p>MicroPython è un sottoinsieme: mancano alcune librerie standard e alcune funzionalità
+        (ad es. thread avanzati, la parte più ricca di <code class="inline">typing</code>, molti
+        pacchetti di terze parti). Il codice è comunque in gran parte compatibile. Package manager:
+        <code class="inline">mip</code> al posto di <code class="inline">pip</code>, con un indice
+        dedicato (<a href="https://micropython.org/pi" target="_blank" rel="noopener">micropython.org/pi</a>).</p>
+      </details>
+      <details>
+        <summary>Async/await e asyncio su MicroPython</summary>
+        <p>MicroPython include <code class="inline">asyncio</code>: utile per gestire più attività
+        concorrenti (ad es. server web + lettura sensori) senza bloccare il loop. È lo stesso modello
+        usato internamente da Microdot.</p>
+        <p><a href="https://docs.micropython.org/en/latest/library/asyncio.html" target="_blank" rel="noopener">Documentazione asyncio →</a></p>
+      </details>
+      <details>
+        <summary>WebREPL: REPL via browser</summary>
+        <p>Con <code class="inline">webrepl.start()</code> (in <code class="inline">boot.py</code>)
+        puoi aprire una REPL via Wi-Fi dal browser, utile quando la scheda è lontana dal PC.</p>
+        <p><a href="http://micropython.org/webrepl" target="_blank" rel="noopener">Client WebREPL →</a></p>
+      </details>
+
+      <nav class="pager">
+        <a href="rete.html"><span class="dir">← Indietro</span>Rete e Wi-Fi</a>
+        <a href="esempi.html"><span class="dir">Avanti →</span>Esempi pratici</a>
+      </nav>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p>Materiale didattico ESP32 + MicroPython · sito statico senza JavaScript</p>
+  <p>
+    <a href="index.html">Home</a> ·
+    <a href="teoria.html">Teoria</a> ·
+    <a href="configurazione.html">Configurazione</a> ·
+    <a href="rete.html">Rete</a> ·
+    <a href="micropython.html">MicroPython</a> ·
+    <a href="esempi.html">Esempi</a>
+  </p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 + MicroPython — Guida passo-passo</title>
+<meta name="description" content="Guida didattica all'ESP32 con MicroPython: teoria, configurazione, rete, REPL ed esempi pratici. Sito statico, senza JavaScript.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">ESP</span>
+      <span>ESP32 · MicroPython<small>Guida passo-passo</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigazione principale">
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="teoria.html">Teoria</a>
+      <a href="configurazione.html">Configurazione</a>
+      <a href="rete.html">Rete</a>
+      <a href="micropython.html">MicroPython</a>
+      <a href="esempi.html">Esempi</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <span class="eyebrow">IoT · Embedded · Didattica</span>
+    <h1>Imparare l'<span class="hl">ESP32</span> con <span class="hl">MicroPython</span></h1>
+    <p class="lead">
+      Un percorso guidato <em>scheda dopo scheda</em>: partiamo dalla teoria dell'hardware,
+      passiamo alla configurazione dell'ambiente e della rete, scopriamo MicroPython e la REPL,
+      e finiamo con esempi pratici — dal blink del LED integrato a un LED su breadboard,
+      fino al deep sleep e a un piccolo web server.
+    </p>
+    <div class="hero-actions">
+      <a class="btn primary" href="teoria.html">Inizia dalla teoria →</a>
+      <a class="btn" href="esempi.html">Vai subito agli esempi</a>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><span class="v">240 MHz</span><span class="k">Dual-core</span></div>
+    <div class="stat"><span class="v">16</span><span class="k">Canali PWM</span></div>
+    <div class="stat"><span class="v">3</span><span class="k">UART</span></div>
+    <div class="stat"><span class="v">2.4 GHz</span><span class="k">Wi-Fi / BLE</span></div>
+  </div>
+
+  <h2>Il percorso in 5 schede</h2>
+  <p class="lead">Ogni scheda è autonoma ma ordinata: conviene seguirle in sequenza. Tutti i collegamenti sono normali link HTML — il sito non usa JavaScript.</p>
+
+  <div class="grid cols-2">
+
+    <a class="toc-card" href="teoria.html">
+      <span class="num">1</span>
+      <h3>Teoria e hardware</h3>
+      <p>Architettura dual-core, UART, PWM, ADC/DAC, bus I2C/SPI, gestione dell'energia, tabella dei pin e approfondimenti proposti.</p>
+    </a>
+
+    <a class="toc-card" href="configurazione.html">
+      <span class="num">2</span>
+      <h3>Configurazione dell'ESP</h3>
+      <p>Driver USB, ambiente Anaconda, flashing del firmware con <code class="inline">esptool</code>, verifica con Thonny/PuTTY e trasferimento file con <code class="inline">mpremote</code>.</p>
+    </a>
+
+    <a class="toc-card" href="rete.html">
+      <span class="num">3</span>
+      <h3>Rete e Wi-Fi</h3>
+      <p>Connessione manuale e automatica (<code class="inline">boot.py</code>), modalità Access Point, comandi di rete, MAC, scan, IP statico e test di connettività.</p>
+    </a>
+
+    <a class="toc-card" href="micropython.html">
+      <span class="num">4</span>
+      <h3>MicroPython</h3>
+      <p>Cos'è MicroPython, la REPL, i moduli <code class="inline">machine</code> ed <code class="inline">esp</code>, la differenza tra <code class="inline">boot.py</code> e <code class="inline">main.py</code>.</p>
+    </a>
+
+    <a class="toc-card" href="esempi.html">
+      <span class="num">5</span>
+      <h3>Esempi pratici</h3>
+      <p>Blink del LED integrato, LED su breadboard con resistenza, risveglio dal deep sleep con pulsante e web server con Microdot.</p>
+    </a>
+
+  </div>
+
+  <h2>Di cosa hai bisogno</h2>
+  <div class="grid cols-3">
+    <div class="card"><h4>Handler</h4><p class="small">Una scheda ESP32 (qualsiasi variante: ESP32, S3, C3…).</p></div>
+    <div class="card"><h4>Cavo dati</h4><p class="small">Cavo USB <strong>dati</strong>, non solo di ricarica: è l'errore più comune.</p></div>
+    <div class="card"><h4>PC + Anaconda</h4><p class="small">Windows/Linux/macOS con Miniconda o Anaconda e connessione internet.</p></div>
+  </div>
+
+  <h2>Riferimento rapido pin</h2>
+  <div class="callout info">
+    <span class="tag">Da tenere a portata di mano</span>
+    <p>Tabella sintetica dei pin ESP32 classici. La versione completa, con note d'uso, è nella <a href="teoria.html#pin">scheda di teoria</a>.</p>
+  </div>
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Periferica</th><th>Pin</th><th>Note</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>GPIO utilizzabili</td><td>0–19, 21–23, 25–27, 32–39</td><td>Range totale dei pin fisici</td></tr>
+      <tr><td>Pin solo input</td><td>34, 35, 36, 37, 38, 39</td><td>Privi di pull-up/down interni</td></tr>
+      <tr><td>Pin critici (Flash)</td><td>6–11, 16, 17</td><td>Da evitare: legati alla SPI interna</td></tr>
+      <tr><td>ADC Block 1</td><td>32–39</td><td>Sicuro anche con Wi-Fi attivo</td></tr>
+      <tr><td>ADC Block 2</td><td>0, 2, 4, 12–15, 25–27</td><td>In conflitto con il Wi-Fi</td></tr>
+      <tr><td>DAC</td><td>25, 26</td><td>Output analogico reale a 8 bit</td></tr>
+      <tr><td>TouchPad</td><td>0, 2, 4, 12, 13, 14, 15, 27, 32, 33</td><td>Utilizzabili come sorgenti di wake-up</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout tip">
+    <span class="tag">Sicurezza</span>
+    <p>Non pubblicare mai SSID e password reali negli esempi condivisi o nel controllo di versione: usa placeholder come <code class="inline">"NOME_RETE"</code> / <code class="inline">"PASSWORD_RETE"</code>.</p>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  <p>Materiale didattico ESP32 + MicroPython · sito statico senza JavaScript</p>
+  <p>
+    <a href="index.html">Home</a> ·
+    <a href="teoria.html">Teoria</a> ·
+    <a href="configurazione.html">Configurazione</a> ·
+    <a href="rete.html">Rete</a> ·
+    <a href="micropython.html">MicroPython</a> ·
+    <a href="esempi.html">Esempi</a>
+  </p>
+</footer>
+
+</body>
+</html>

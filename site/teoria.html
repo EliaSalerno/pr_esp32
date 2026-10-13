@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheda 1 · Teoria e hardware — ESP32 + MicroPython</title>
+<meta name="description" content="Architettura, periferiche e specifiche tecniche dell'ESP32 con MicroPython: CPU dual-core, UART, PWM, ADC/DAC, I2C/SPI, energia e pinout.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">ESP</span>
+      <span>ESP32 · MicroPython<small>Guida passo-passo</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigazione principale">
+      <a href="index.html">Home</a>
+      <a href="teoria.html" aria-current="page">Teoria</a>
+      <a href="configurazione.html">Configurazione</a>
+      <a href="rete.html">Rete</a>
+      <a href="micropython.html">MicroPython</a>
+      <a href="esempi.html">Esempi</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="index.html">Home</a> / Scheda 1 — Teoria e hardware</p>
+
+  <div class="page-grid">
+    <aside class="side">
+      <h4>In questa scheda</h4>
+      <a href="#perche">Perché ESP32 + MicroPython</a>
+      <a href="#architettura">1. Architettura e calcolo</a>
+      <a href="#uart">2. UART</a>
+      <a href="#analogico">3. PWM, ADC e DAC</a>
+      <a href="#bus">4. Bus I2C e SPI</a>
+      <a href="#energia">5. Energia e deep sleep</a>
+      <a href="#pin">6. Tabella dei pin</a>
+      <a href="#approfondimenti">Approfondimenti proposti</a>
+    </aside>
+
+    <div>
+      <h1>Teoria e hardware dell'ESP32</h1>
+      <p class="lead">
+        Prima di scrivere una riga di codice conviene capire <em>cosa</em> stiamo programmando.
+        Questa scheda riassume l'architettura dell'ESP32, le sue periferiche e i vincoli da
+        conoscere per progettare in modo affidabile.
+      </p>
+
+      <div class="callout deep" id="perche">
+        <span class="tag">Il punto di partenza</span>
+        <p>
+          L'ESP32 è <strong>lo standard de facto per l'IoT</strong>: offre un equilibrio senza
+          precedenti tra potenza di calcolo e versatilità di interfacciamento. Scegliere
+          MicroPython non è una semplice comodità, ma una <strong>decisione strategica</strong>:
+          l'astrazione di alto livello riduce la complessità dello sviluppo bare-metal, mantenendo
+          però un controllo granulare sull'hardware grazie ai moduli <code class="inline">machine</code>
+          ed <code class="inline">esp</code>.
+        </p>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span class="v">Dual-core</span><span class="k">fino a 240 MHz</span></div>
+        <div class="stat"><span class="v">Wi-Fi</span><span class="k">+ Bluetooth / BLE</span></div>
+        <div class="stat"><span class="v">4 MB</span><span class="k">Flash tipica</span></div>
+        <div class="stat"><span class="v">520 KB</span><span class="k">SRAM interna</span></div>
+      </div>
+
+      <!-- 1 -->
+      <h2 id="architettura">1. Architettura centrale e gestione del calcolo</h2>
+      <p>
+        La gestione della frequenza operativa è fondamentale per bilanciare throughput di calcolo
+        e budget energetico. Con <code class="inline">machine.freq()</code> si può spingere il
+        dual-core fino a 240 MHz; in contesti di produzione è prassi silenziare i log del vendor
+        per avere una console seriale pulita.
+      </p>
+      <pre><code>import machine
+import esp
+
+# Silenzia i messaggi di sistema (utile in produzione)
+esp.osdebug(None)
+
+# Massime prestazioni computazionali
+machine.freq(240000000)
+print("Frequenza attuale:", machine.freq())</code></pre>
+
+      <h3>Gestione della flash e longevità del dispositivo</h3>
+      <p>
+        Il modulo <code class="inline">esp</code> offre accesso diretto alla flash
+        (<code class="inline">flash_read</code>, <code class="inline">flash_write</code>,
+        <code class="inline">flash_erase</code>). Queste operazioni però <strong>bypassano il wear
+        leveling</strong> del filesystem (VFS) di MicroPython: scrivere in cicli iterativi può
+        esaurire rapidamente la memoria (tipicamente ~100.000 cicli di scrittura per cella).
+      </p>
+      <div class="callout warn">
+        <span class="tag">Attenzione</span>
+        <p>Per salvare dati in modo persistente preferisci il filesystem (<code class="inline">open()</code>) e limita l'uso diretto di <code class="inline">flash_write</code> ai casi in cui serve davvero.</p>
+      </div>
+
+      <!-- 2 -->
+      <h2 id="uart">2. Sottosistemi di comunicazione seriale: UART</h2>
+      <p>
+        La UART è il "sistema nervoso" dell'ESP32: serve la REPL ma anche sensori intelligenti e
+        moduli di telemetria. L'ESP32 dispone di <strong>tre controller UART hardware</strong> e di
+        una <strong>GPIO matrix</strong> che permette di mappare TX/RX su quasi tutti i pin.
+      </p>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Periferica</th><th>TX predefinito</th><th>RX predefinito</th><th>Note architetturali</th></tr></thead>
+        <tbody>
+          <tr><td>UART0</td><td>GPIO 1</td><td>GPIO 3</td><td>Riservata alla REPL e al flashing</td></tr>
+          <tr><td>UART1</td><td>GPIO 10</td><td>GPIO 9</td><td>Spesso in conflitto con la Flash SPI</td></tr>
+          <tr><td>UART2</td><td>GPIO 17</td><td>GPIO 16</td><td>Ottimale per uso generale</td></tr>
+          <tr><td>UART1 (SPIRAM)</td><td>GPIO 5</td><td>GPIO 4</td><td>Default per varianti con PSRAM esterna</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="small muted">
+        L'allocazione di pin personalizzati durante l'inizializzazione dell'oggetto UART è la
+        strategia preferibile per evitare interferenze con il bus di memoria interno.
+      </p>
+
+      <!-- 3 -->
+      <h2 id="analogico">3. Segnali analogici e PWM</h2>
+      <h3>PWM e limitazioni operative</h3>
+      <p>
+        Il sistema PWM supporta fino a <strong>16 canali</strong>, ma impone un tradeoff: all'aumentare
+        della frequenza (fino a 40 MHz) diminuisce la risoluzione del duty cycle.
+      </p>
+      <ul>
+        <li><strong>Capacità hardware:</strong> 16 canali e 8 frequenze indipendenti per ESP32; 8 canali per S2/S3; 6 per la serie C.</li>
+        <li><strong>Vincolo light sleep:</strong> in risparmio energetico si riduce a 4 timer e 8 canali — limite critico per illuminazione o motorizzazione sempre attive.</li>
+      </ul>
+
+      <h3>Precisione ADC e conflitti con il Wi-Fi</h3>
+      <p>
+        Per il monitoraggio analogico <code class="inline">read_uv()</code> è superiore a
+        <code class="inline">read_u16()</code> perché usa i valori di calibrazione eFuse di fabbrica.
+        Attenzione: sebbene restituisca microvolt, la risoluzione effettiva è di <strong>1 mV</strong>
+        (valori sempre multipli di 1000).
+      </p>
+      <div class="callout danger">
+        <span class="tag">Errore fatale comune</span>
+        <p>Il blocco <strong>ADC2</strong> (pin 0, 2, 4, 12–15, 25–27) è condiviso con il Wi-Fi. Leggere da questi pin mentre il Wi-Fi è attivo solleva un'eccezione di sistema: usa i pin dell'<strong>ADC1</strong> (32–39).</p>
+      </div>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Attenuazione</th><th>Intervallo lineare (approssimativo)</th></tr></thead>
+        <tbody>
+          <tr><td>0 dB</td><td>100 mV – 950 mV</td></tr>
+          <tr><td>2.5 dB</td><td>100 mV – 1250 mV</td></tr>
+          <tr><td>6 dB</td><td>150 mV – 1750 mV</td></tr>
+          <tr><td>11 dB</td><td>150 mV – 2450 mV</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>
+        Il controllo si completa con i due <strong>DAC a 8 bit</strong> sui pin <strong>25</strong> e
+        <strong>26</strong>, ideali per generare forme d'onda analogiche reali.
+      </p>
+
+      <!-- 4 -->
+      <h2 id="bus">4. Infrastruttura dei bus: I2C e SPI</h2>
+      <h3>SPI — performance e multiplexing</h3>
+      <p>
+        L'ESP32 implementa due controller hardware: <strong>HSPI</strong> (ID 1) e <strong>VSPI</strong>
+        (ID 2). Per le massime prestazioni (fino a 80 MHz) è obbligatorio usare i pin predefiniti;
+        mappando l'SPI su pin non standard tramite la GPIO matrix, la velocità massima scende a
+        40 MHz per i ritardi di propagazione introdotti dal multiplexing.
+      </p>
+      <h3>I2C — robustezza e scansione</h3>
+      <p>
+        Con due controller hardware (ID 0 e 1), l'ESP32 gestisce array complessi di sensori.
+        Eseguire <code class="inline">i2c.scan()</code> all'avvio è una buona pratica: permette di
+        validare l'integrità del bus prima delle operazioni critiche.
+      </p>
+      <pre><code>from machine import I2C, Pin
+
+# Bus 0 predefinito: SDA=19, SCL=18
+i2c = I2C(0, scl=Pin(18), sda=Pin(19), freq=400000)
+print("Dispositivi trovati:", [hex(a) for a in i2c.scan()])</code></pre>
+
+      <!-- 5 -->
+      <h2 id="energia">5. Gestione dell'energia e persistenza degli stati</h2>
+      <p>
+        Il Deep-Sleep non è una pausa, ma una <strong>modalità operativa</strong> che richiede una
+        gestione software granulare per mantenere la coerenza dell'hardware.
+      </p>
+      <h3>Logica di risveglio e RTC</h3>
+      <p>
+        Al risveglio dal Deep-Sleep l'ESP32 esegue un <strong>reset completo</strong>. Usa
+        <code class="inline">machine.reset_cause()</code> per distinguere un boot da alimentazione da
+        un risveglio programmato tramite RTC.
+      </p>
+      <h3>Persistenza dei livelli logici: Pad Hold</h3>
+      <ol>
+        <li><strong>Pin RTC:</strong> mantengono i pull-up/down nativamente.</li>
+        <li><strong>Pin standard (non-RTC):</strong> richiedono <code class="inline">hold=True</code> all'inizializzazione e <code class="inline">esp32.gpio_deep_sleep_hold(True)</code> prima di dormire.</li>
+        <li><strong>Efficienza:</strong> prima dello sleep disabilita i pull-up non necessari per evitare perdite di corrente parassite.</li>
+      </ol>
+      <div class="callout info">
+        <span class="tag">Approfondimento</span>
+        <p>Il deep sleep e il risveglio da segnale esterno sono mostrati nel concreto nella <a href="esempi.html#deep-sleep">scheda Esempi</a>.</p>
+      </div>
+
+      <!-- 6 -->
+      <h2 id="pin">6. Sintesi delle specifiche hardware (tabella di riferimento)</h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Specifica</th><th>Pin / Range</th><th>Note tecniche</th></tr></thead>
+        <tbody>
+          <tr><td>Range GPIO</td><td>0–19, 21–23, 25–27, 32–39</td><td>Range totale dei pin fisici utilizzabili</td></tr>
+          <tr><td>Pin solo input</td><td>34, 35, 36, 37, 38, 39</td><td>Privi di pull-up/down interni; ideali per sensori</td></tr>
+          <tr><td>Pin critici (Flash)</td><td>6, 7, 8, 11, 16, 17</td><td>Evitare: legati alla memoria SPI interna</td></tr>
+          <tr><td>I2C default (bus 0)</td><td>SDA=19, SCL=18</td><td>Configurabili su altri pin via software</td></tr>
+          <tr><td>I2C default (bus 1)</td><td>SDA=26, SCL=25</td><td>Spesso condivisi con i canali DAC</td></tr>
+          <tr><td>SPI default (VSPI)</td><td>SCK=18, MOSI=23, MISO=19</td><td>Supporta 80 MHz (40 MHz se rimappati)</td></tr>
+          <tr><td>SPI default (HSPI)</td><td>SCK=14, MOSI=13, MISO=12</td><td>Controller secondario ad alte prestazioni</td></tr>
+          <tr><td>ADC Block 1</td><td>32, 33, 34, 35, 36, 37, 38, 39</td><td>Sicuro: utilizzabile con il Wi-Fi attivo</td></tr>
+          <tr><td>ADC Block 2</td><td>0, 2, 4, 12, 13, 14, 15, 25, 26, 27</td><td>Rischio: eccezione se il Wi-Fi è attivo</td></tr>
+          <tr><td>DAC</td><td>25, 26</td><td>Risoluzione 8 bit; segnale analogico reale</td></tr>
+          <tr><td>TouchPad</td><td>0, 2, 4, 12, 13, 14, 15, 27, 32, 33</td><td>Capacitivi; usabili come wake-up</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <figure>
+        <img src="images/Guida_tecnica_hardware_e_protocolli.png" alt="Rappresentazione visiva dei protocolli e dell'hardware dell'ESP32">
+        <figcaption>Guida tecnica visuale: protocolli e hardware (materiale incluso nel repository).</figcaption>
+      </figure>
+
+      <!-- Approfondimenti -->
+      <h2 id="approfondimenti">Approfondimenti proposti</h2>
+      <p class="lead">Spunti per chi vuole andare oltre. Sono tutte fonti esterne ufficiali o di riferimento.</p>
+
+      <details>
+        <summary>Perché MicroPython e non C/C++ (Arduino/ESP-IDF)?</summary>
+        <p>
+          MicroPython permette di prototipare in pochi secondi (niente cicli di compilazione) e di
+          editare il codice via REPL o seriale. C/C++ resta preferibile quando servono determinismo
+          in tempo reale, accesso a driver non ancora esposti o ottimizzazione estrema di memoria.
+          Un buon compromesso è prototipare in MicroPython e, se necessario, riscrivere in C solo le
+          parti critiche.
+        </p>
+        <p><a href="https://docs.micropython.org/en/latest/esp32/tutorial/intro.html" target="_blank" rel="noopener">Documentazione ufficiale: MicroPython su ESP32 →</a></p>
+      </details>
+
+      <details>
+        <summary>Differenze tra ESP32 classico, S2, S3 e C3</summary>
+        <p>
+          Le varianti cambiano numero di core, Wi-Fi dual-band o meno, BLE, controller PWM (16 sul
+          classico, 8 su S2/S3, 6 sulla serie C) e USB nativo. La logica MicroPython resta simile, ma
+          i pin e le periferiche variano: consulta sempre il pinout della <em>tua</em> scheda.
+        </p>
+        <p><a href="https://www.espressif.com/en/products/socs" target="_blank" rel="noopener">Espressif — datasheet e SoC →</a></p>
+      </details>
+
+      <details>
+        <summary>Deep sleep: calcolo del consumo e strategie</summary>
+        <p>
+          In deep sleep il consumo scende a decine di microampere. La durata del sonno si imposta
+          con <code class="inline">machine.deepsleep(tempo_ms)</code> oppure ci si sveglia da un segnale
+          esterno. Disabilitare LED, pull-up e moduli non usati prima di dormire è essenziale per
+          ottenere il risparmio atteso.
+        </p>
+        <p><a href="https://docs.micropython.org/en/latest/esp32/quickref.html" target="_blank" rel="noopener">MicroPython ESP32 Quick Reference →</a></p>
+      </details>
+
+      <details>
+        <summary>Materiale PDF incluso nel repository</summary>
+        <p>Per approfondire le essenzialità di MicroPython per l'IoT è incluso il volume:</p>
+        <p><a href="../intro/ESP32_MicroPython_IoT_Essentials.pdf">ESP32 — MicroPython IoT Essentials (PDF) →</a></p>
+      </details>
+
+      <nav class="pager">
+        <a href="index.html"><span class="dir">← Indietro</span>Home</a>
+        <a href="configurazione.html"><span class="dir">Avanti →</span>Configurazione dell'ESP</a>
+      </nav>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p>Materiale didattico ESP32 + MicroPython · sito statico senza JavaScript</p>
+  <p>
+    <a href="index.html">Home</a> ·
+    <a href="teoria.html">Teoria</a> ·
+    <a href="configurazione.html">Configurazione</a> ·
+    <a href="rete.html">Rete</a> ·
+    <a href="micropython.html">MicroPython</a> ·
+    <a href="esempi.html">Esempi</a>
+  </p>
+</footer>
+
+</body>
+</html>
