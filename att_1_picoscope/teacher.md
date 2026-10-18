@@ -1,8 +1,3 @@
-Ecco la versione per il docente in formato Markdown, basata esattamente sulla risposta completa e dettagliata fornita in precedenza (con teoria, codice completo in MicroPython per entrambe le schede e schemi dei collegamenti hardware).
-
-Puoi salvare questo testo direttamente in un file con estensione `.md` (es. `guida_docente_uart_esp32.md`).
-
-```markdown
 # Guida Docente: Analisi della Trasmissione Seriale con ESP32 e Picoscope
 
 ## 1. Ripasso Teorico: La Trasmissione Seriale (UART)
@@ -137,7 +132,3 @@ while True:
 ### Spunto di verifica per il docente:
 
 *Se aumentassimo il Baud Rate a 115200, come cambierebbe visivamente la forma d'onda sul Picoscope rispetto a quella osservata a 9600 baud?*
-
-```
-
-```
