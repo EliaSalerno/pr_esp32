@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheda 2 · Configurazione dell'ESP — ESP32 + MicroPython</title>
+<meta name="description" content="Configurazione completa dell'ESP32: driver USB, ambiente Anaconda, flashing del firmware con esptool, verifica con Thonny/PuTTY e trasferimento file con mpremote.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">ESP</span>
+      <span>ESP32 · MicroPython<small>Guida passo-passo</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigazione principale">
+      <a href="index.html">Home</a>
+      <a href="teoria.html">Teoria</a>
+      <a href="configurazione.html" aria-current="page">Configurazione</a>
+      <a href="rete.html">Rete</a>
+      <a href="micropython.html">MicroPython</a>
+      <a href="esempi.html">Esempi</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="index.html">Home</a> / Scheda 2 — Configurazione dell'ESP</p>
+
+  <div class="page-grid">
+    <aside class="side">
+      <h4>In questa scheda</h4>
+      <a href="#fase1">FASE 1 · Driver USB</a>
+      <a href="#fase2">FASE 2 · Ambiente e firmware</a>
+      <a href="#fase3">FASE 3 · REPL e file .py</a>
+      <a href="#mpremote">Comandi mpremote</a>
+      <a href="#problemi">Problemi comuni</a>
+      <a href="#web-server-file">Web server (Microdot)</a>
+    </aside>
+
+    <div>
+      <h1>Configurazione dell'ESP32</h1>
+      <p class="lead">
+        Questa è la fase in cui la scheda "prende vita": installiamo i driver, sostituiamo il
+        firmware di fabbrica con MicroPython e impariamo a trasferire ed eseguire codice.
+        Il percorso è diviso in tre fasi, come nella documentazione del repository.
+      </p>
+
+      <div class="callout info">
+        <span class="tag">Requisiti</span>
+        <p>Scheda ESP32 · cavo USB <strong>dati</strong> (non solo di ricarica) · PC con Anaconda/Miniconda · connessione internet.</p>
+      </div>
+
+      <!-- FASE 1 -->
+      <h2 id="fase1">FASE 1 — Driver USB</h2>
+      <ol class="steps">
+        <li>
+          <strong>Controlla Gestione dispositivi</strong>
+          Premi <kbd>Windows</kbd> + <kbd>X</kbd> e apri <em>Gestione dispositivi</em>: se compare un
+          dispositivo con driver mancante (triangolo giallo), cerca quella dicitura online e installa
+          il driver previsto.
+        </li>
+        <li>
+          <strong>Verifica il riconoscimento</strong>
+          Sempre in Gestione dispositivi, sotto <em>Porte (COM e LPT)</em> deve comparire una voce
+          dedicata, ad esempio <code class="inline">Silicon Labs CP210x USB to UART Bridge (COM5)</code>.
+          Annota il numero di <strong>COM</strong>: servirà ovunque.
+        </li>
+        <li>
+          <strong>Conferma con uno strumento esterno</strong>
+          Puoi verificare la connessione anche con Arduino IDE, PuTTY o Thonny: premi il tasto
+          <strong>reset</strong> della board e osserva se sul terminale appaiono dati.
+        </li>
+      </ol>
+
+      <div class="img-row">
+        <figure>
+          <img src="assets/images/putty.bmp" alt="Conferma della porta seriale tramite PuTTY">
+          <figcaption>Conferma della porta con PuTTY (screenshot dal repository).</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/thonny.bmp" alt="Thonny collegato alla scheda ESP32">
+          <figcaption>Thonny collegato alla scheda (screenshot dal repository).</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/thonny2.bmp" alt="Selezione dell'interprete MicroPython in Thonny">
+          <figcaption>Thonny: dal menù a tendina si sceglie l'interprete.</figcaption>
+        </figure>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">Attenzione</span>
+        <p>Se il dispositivo resta nascosto o non reperibile, probabilmente stai usando un cavo che <strong>non scambia dati</strong>: serve un cavo USB dati, non uno di sola ricarica.</p>
+      </div>
+
+      <!-- FASE 2 -->
+      <h2 id="fase2">FASE 2 — Ambiente e firmware MicroPython</h2>
+      <p>
+        Il firmware di fabbrica non esegue MicroPython: va sostituito. Per farlo usiamo un ambiente
+        virtuale dedicato creato con Anaconda (o, se preferisci, il terminale di VS Code).
+      </p>
+
+      <h3>2.1 Installare Anaconda / Miniconda</h3>
+      <p>Può bastare la versione leggera <a href="https://www.anaconda.com/download/success" target="_blank" rel="noopener">Miniconda</a>.</p>
+      <figure>
+        <img src="assets/images/Miniconda.bmp" alt="Pagina di download di Miniconda">
+        <figcaption>Download di Miniconda (screenshot dal repository).</figcaption>
+      </figure>
+
+      <h3>2.2 Creare l'ambiente e installare gli strumenti</h3>
+      <p>Apri <strong>Anaconda Prompt</strong> ed esegui:</p>
+      <div class="code-head"><span>Anaconda Prompt</span></div>
+      <pre class="term"><code>conda create -n pr_esp32 python=3.11
+conda activate pr_esp32
+python -m pip install esptool mpremote</code></pre>
+      <ul>
+        <li><strong>esptool</strong> — scrive (flash) il firmware MicroPython sulla scheda.</li>
+        <li><strong>mpremote</strong> — strumento ufficiale per comunicare con la scheda, trasferire file ed eseguire script.</li>
+      </ul>
+      <div class="callout tip">
+        <span class="tag">Nota per la classe</span>
+        <p>Preferisci <code class="inline">pip install</code> a <code class="inline">conda install</code>: i canali Anaconda a pagamento possono restituire errori <code class="inline">HTTP 403 Forbidden</code>. Verifica con <code class="inline">esptool version</code> e <code class="inline">mpremote --help</code>.</p>
+      </div>
+
+      <h3>2.3 Scaricare il firmware</h3>
+      <p>
+        Vai su <a href="https://micropython.org/download" target="_blank" rel="noopener">micropython.org/download</a>,
+        scegli la scheda corretta (ESP32 generico, oppure S3/C3 se in uso) e scarica il file
+        <code class="inline">.bin</code> più recente. Nel repository è incluso un firmware di esempio:
+        <code class="inline">configure/ESP32_GENERIC-20260824-v1.29.0.bin</code>.
+      </p>
+
+      <h3>2.4 Cancellare la flash e scrivere il firmware</h3>
+      <p>Sostituisci <code class="inline">COM3</code> con la tua porta e <code class="inline">firmware.bin</code> con il file scaricato:</p>
+      <div class="code-head"><span>esptool</span></div>
+      <pre class="term"><code>esptool --port COM3 erase_flash
+esptool --port COM3 --baud 460800 write_flash -z 0x1000 firmware.bin</code></pre>
+      <p class="small muted">
+        Variante "storica" con underscore: <code class="inline">esptool.py --port COM3 erase-flash</code> e
+        <code class="inline">esptool.py --baud 460800 write_flash 0x1000 firmware.bin</code>.
+      </p>
+      <div class="callout tip">
+        <span class="tag">Se il flash fallisce</span>
+        <p>Riprova con <code class="inline">--baud 115200</code> (più lento ma più stabile) se il cavo è
+        scadente. Al termine l'output deve confermare <code class="inline">Hash of data verified</code>.</p>
+      </div>
+
+      <!-- FASE 3 -->
+      <h2 id="fase3">FASE 3 — Lavorare con la REPL e i file .py</h2>
+      <p>
+        Molte volte configurare il dispositivo direttamente dalla REPL è scomodo:
+      </p>
+      <ul>
+        <li>incollare istruzioni dal web fa saltare le <strong>indentazioni</strong>;</li>
+        <li>alcuni caratteri possono "sporcare" il codice;</li>
+        <li>un'istruzione può non dare il risultato voluto e non ce ne accorgiamo.</li>
+      </ul>
+      <p>In molti di questi casi la REPL <strong>chiude la connessione</strong>. La soluzione è scrivere un file <code class="inline">.py</code>, copiarlo nella memoria della scheda ed eseguirlo da lì.</p>
+
+      <div class="code-head"><span>Copia ed esegui un file sulla scheda</span></div>
+      <pre class="term"><code>mpremote connect COM3 fs cp wifi_config.py :wifi_config.py
+mpremote connect COM3 run wifi_config.py</code></pre>
+
+      <div class="callout info">
+        <span class="tag">Solo una connessione alla volta</span>
+        <p>Solo un programma può usare la porta seriale. Se Thonny, VS Code o un terminale sono aperti sulla stessa porta, <code class="inline">mpremote</code> darà <code class="inline">could not enter raw repl</code>. Chiudili prima.</p>
+      </div>
+
+      <!-- mpremote -->
+      <h2 id="mpremote">Riepilogo comandi <code class="inline">mpremote</code></h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">mpremote devs</code></td><td>Elenca le porte seriali disponibili</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3</code></td><td>Apre la REPL interattiva (esci con Ctrl+])</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3 fs ls</code></td><td>Elenca i file presenti sulla scheda</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3 fs cp file.py :file.py</code></td><td>Copia un file dal PC alla scheda</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3 fs cp :file.py .</code></td><td>Copia un file dalla scheda al PC</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3 fs rm :file.py</code></td><td>Elimina un file dalla scheda</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3 run file.py</code></td><td>Esegue uno script locale senza salvarlo</td></tr>
+          <tr><td><code class="inline">mpremote connect COM3 exec "import file"</code></td><td>Esegue un file già presente sulla scheda</td></tr>
+          <tr><td><code class="inline">mpremote mip install &lt;pacchetto&gt;</code></td><td>Installa un pacchetto sulla scheda</td></tr>
+          <tr><td><code class="inline">mpremote reset</code></td><td>Reset software della scheda</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="small muted">I comandi si possono concatenare con <code class="inline">+</code>: <code class="inline">mpremote connect COM3 fs cp main.py : + reset</code>.</p>
+
+      <h3>Comandi esptool di riferimento</h3>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">esptool --port COM3 erase_flash</code></td><td>Cancella la memoria flash della scheda</td></tr>
+          <tr><td><code class="inline">esptool --port COM3 --baud 460800 write_flash -z 0x1000 firmware.bin</code></td><td>Scrive il firmware MicroPython</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <!-- Web server -->
+      <h2 id="web-server-file">Un assaggio: web server con Microdot</h2>
+      <p>
+        <strong>Flask non funziona</strong> su MicroPython (richiede CPython completo). L'alternativa
+        leggera con sintassi simile è <strong>Microdot</strong>. Si può installare manualmente, senza
+        bisogno di Wi-Fi durante l'installazione:
+      </p>
+      <div class="code-head"><span>Installazione manuale di Microdot</span></div>
+      <pre class="term"><code>pip download microdot --no-deps -d .
+# oppure
+git clone https://github.com/miguelgrinberg/microdot.git
+
+# oppure vedi examples/step3/microdot
+mpremote connect COM3 fs cp microdot.py :microdot.py</code></pre>
+      <p>Esempio minimo, che riusa lo script di connessione già scritto:</p>
+      <pre><code>from microdot import Microdot
+import wifi_config
+
+wifi_config.connect_wifi("NOME_RETE", "PASSWORD_RETE")
+
+app = Microdot()
+
+@app.route('/')
+def index(request):
+    return 'Ciao dalla ESP32!'
+
+app.run(port=80)</code></pre>
+      <p class="small muted">
+        Dopo l'avvio apri nel browser l'indirizzo IP assegnato alla scheda (visibile nell'output di
+        <code class="inline">wlan.ifconfig()</code>). Il dettaglio completo è nella
+        <a href="esempi.html#web-server">scheda Esempi</a>.
+      </p>
+
+      <!-- Problemi -->
+      <h2 id="problemi">Problemi comuni e soluzioni rapide</h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Problema</th><th>Causa probabile</th><th>Soluzione</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">CondaHTTPError 403</code></td><td>Restrizioni sui canali Anaconda a pagamento</td><td>Usa <code class="inline">pip install</code></td></tr>
+          <tr><td><code class="inline">could not enter raw repl</code></td><td>Porta seriale occupata</td><td>Chiudi VS Code / Thonny / altri terminali</td></tr>
+          <tr><td><code class="inline">could not read file</code></td><td>Uso errato di <code class="inline">run</code> vs <code class="inline">exec</code></td><td>Usa <code class="inline">exec "import file"</code> per file già sulla scheda</td></tr>
+          <tr><td>La scheda non risponde / simboli strani</td><td>Firmware non flashato correttamente</td><td>Rifai <code class="inline">erase_flash</code> poi <code class="inline">write_flash</code></td></tr>
+          <tr><td>Scheda non riconosciuta</td><td>Cavo errato (solo ricarica)</td><td>Usa un cavo USB dati</td></tr>
+          <tr><td><code class="inline">mip install</code> fallisce</td><td>Pacchetto non nell'indice o manca il Wi-Fi</td><td>Installa manualmente con <code class="inline">fs cp</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <nav class="pager">
+        <a href="teoria.html"><span class="dir">← Indietro</span>Teoria e hardware</a>
+        <a href="rete.html"><span class="dir">Avanti →</span>Rete e Wi-Fi</a>
+      </nav>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p>Materiale didattico ESP32 + MicroPython · sito statico senza JavaScript</p>
+  <p>
+    <a href="index.html">Home</a> ·
+    <a href="teoria.html">Teoria</a> ·
+    <a href="configurazione.html">Configurazione</a> ·
+    <a href="rete.html">Rete</a> ·
+    <a href="micropython.html">MicroPython</a> ·
+    <a href="esempi.html">Esempi</a>
+  </p>
+</footer>
+
+</body>
+</html>

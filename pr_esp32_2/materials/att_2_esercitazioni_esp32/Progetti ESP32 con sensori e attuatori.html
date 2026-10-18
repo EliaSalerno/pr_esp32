@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Progetti ESP32 con sensori e attuatori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --ink:#13202B; --muted:#52626F; --line:#CBD5DC;
+  --blue:#1650E0; --gold:#E0A800; --code-bg:#13202B; --code-ink:#DDE7EE; --chip-on:#13202B; --chip-on-ink:#FFFFFF;
+  color-scheme:light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1820; --surface:#18242F; --ink:#E8EEF3; --muted:#9BAAB6; --line:#2B3B48;
+    --blue:#6D93FF; --gold:#F2C230; --code-bg:#0A1118; --code-ink:#DDE7EE; --chip-on:#E8EEF3; --chip-on-ink:#0F1820;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1820; --surface:#18242F; --ink:#E8EEF3; --muted:#9BAAB6; --line:#2B3B48;
+  --blue:#6D93FF; --gold:#F2C230; --code-bg:#0A1118; --code-ink:#DDE7EE; --chip-on:#E8EEF3; --chip-on-ink:#0F1820;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 "IBM Plex Sans",system-ui,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif;line-height:1.1;margin:0}
+header{padding:56px 0 28px}
+h1{font-weight:800;font-size:clamp(2.2rem,6vw,4rem);max-width:15ch;letter-spacing:-.02em}
+.lead{max-width:56ch;color:var(--muted);margin:18px 0 0;font-size:1.08rem}
+.pins{height:18px;margin:34px 0 0;background:radial-gradient(circle,var(--gold) 0 4px,transparent 4.5px) 0 50%/20px 18px repeat-x;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 24px}
+.chip{font:500 .95rem "IBM Plex Sans",sans-serif;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.chip:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:20px;padding-bottom:40px}
+article{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--blue);border-radius:6px;padding:22px}
+article[data-tipo="Attuatore"]{border-left-color:var(--gold)}
+article h2{font-size:1.45rem;font-weight:600}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px;font-size:.88rem;color:var(--muted)}
+.tag{border:1px solid var(--line);border-radius:4px;padding:1px 8px}
+article p{margin:0 0 14px}
+h3{font-size:1rem;font-weight:600;margin:14px 0 6px}
+ul{margin:0;padding-left:20px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:500}
+details{margin-top:16px}
+summary{cursor:pointer;font-weight:500;color:var(--blue)}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:6px;padding:14px;overflow-x:auto;font:.84rem/1.5 ui-monospace,Menlo,Consolas,monospace;margin:10px 0 0}
+.nota{margin-top:14px;padding:10px 12px;border-left:3px solid var(--gold);background:var(--bg);font-size:.92rem}
+.indice{padding-bottom:26px}
+.indice h2{font-size:1.25rem;margin-bottom:12px}
+.indice ol{margin:0;padding-left:24px;columns:2 280px;column-gap:32px}
+.indice li{margin:0 0 6px;break-inside:avoid}
+.indice a{color:var(--blue);text-decoration:none;font-weight:500}
+.indice a:hover{text-decoration:underline}
+.indice a:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.indice small{color:var(--muted);margin-left:6px}
+article{scroll-margin-top:16px}
+footer{padding:10px 0 48px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Progetti ESP32 con sensori e attuatori</h1>
+  <p class="lead">Cinque montaggi da fare sul tavolo, con i moduli Arduino più comuni. Ogni scheda ha l’elenco dei componenti, i collegamenti ai pin e il codice da caricare con Arduino IDE.</p>
+  <div class="pins" aria-hidden="true"></div>
+  <div class="filters" role="group" aria-label="Filtra i progetti" id="filtri"></div>
+</header>
+<nav class="indice" aria-label="Indice dei progetti"><h2>Indice dei progetti</h2><ol id="indice"></ol></nav>
+<main><div class="grid" id="griglia"></div></main>
+<footer>Tensione dei pin dell’ESP32: 3,3 V. Controlla sempre la tensione di ogni modulo prima di collegarlo. I numeri dei pin (GPIO) sono quelli della scheda DevKit a 30/38 pin.</footer>
+</div>
+<script>
+const progetti=[
+{t:"Temperatura e umidità sul web",tipo:"Sensore",liv:"Facile",
+ d:"L’ESP32 legge un DHT11 e mostra i valori su una pagina raggiungibile dal telefono, sulla stessa rete Wi-Fi.",
+ comp:["ESP32 DevKit","Modulo sensore DHT11 a 3 pin (VCC, DATA, GND)","Libreria “DHT sensor library” di Adafruit"],
+ pin:[["VCC","3V3"],["DATA","GPIO 4"],["GND","GND"]],
+ nota:"Il modulo a 3 pin ha già la resistenza di pull-up, quindi non serve altro. Il DHT11 misura da 0 a 50 °C con precisione di ±2 °C e l’umidità tra 20 e 80 %. Leggilo al massimo una volta al secondo.",
+ code:`#include <WiFi.h>
+#include <WebServer.h>
+#include <DHT.h>
+
+DHT dht(4, DHT11);
+WebServer server(80);
+
+void paginaWeb() {
+  float t = dht.readTemperature();
+  float u = dht.readHumidity();
+  server.send(200, "text/html",
+    "<h1>" + String(t, 1) + " &deg;C &middot; " + String(u, 0) + " %</h1>");
+}
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  WiFi.begin("NOME_RETE", "PASSWORD");
+  while (WiFi.status() != WL_CONNECTED) delay(300);
+  Serial.println(WiFi.localIP());   // apri questo indirizzo nel browser
+  server.on("/", paginaWeb);
+  server.begin();
+}
+
+void loop() { server.handleClient(); }`},
+{t:"Relè acceso da una pagina web",tipo:"Attuatore",liv:"Facile",
+ d:"Due indirizzi web, /on e /off, accendono e spengono una lampada o un ventilatore tramite un modulo relè.",
+ comp:["ESP32 DevKit","Modulo relè a 1 canale (5 V)","Carico a bassa tensione per i primi test"],
+ pin:[["VCC","VIN (5 V)"],["IN","GPIO 26"],["GND","GND"]],
+ nota:"Non toccare mai i collegamenti a 230 V mentre sono sotto tensione. Per i primi test usa un carico a bassa tensione. Molti moduli sono attivi a livello basso: se il relè si comporta al contrario, scambia HIGH e LOW.",
+ code:`#include <WiFi.h>
+#include <WebServer.h>
+
+const int RELE = 26;
+WebServer server(80);
+
+void setup() {
+  pinMode(RELE, OUTPUT);
+  WiFi.begin("NOME_RETE", "PASSWORD");
+  while (WiFi.status() != WL_CONNECTED) delay(300);
+  server.on("/on",  []{ digitalWrite(RELE, HIGH); server.send(200, "text/plain", "Acceso"); });
+  server.on("/off", []{ digitalWrite(RELE, LOW);  server.send(200, "text/plain", "Spento"); });
+  server.begin();
+}
+
+void loop() { server.handleClient(); }`},
+{t:"Allarme con sensore di movimento",tipo:"Sensore",liv:"Facile",
+ d:"Un sensore PIR rileva il movimento e fa suonare un buzzer per tre secondi.",
+ comp:["ESP32 DevKit","Sensore PIR HC-SR501","Buzzer attivo"],
+ pin:[["PIR VCC","VIN (5 V)"],["PIR OUT","GPIO 27"],["Buzzer +","GPIO 25"],["GND","GND (comune)"]],
+ nota:"Il PIR ha bisogno di circa 30 secondi dopo l’accensione per stabilizzarsi. L’uscita è a 3,3 V, quindi va bene per l’ESP32.",
+ code:`const int PIR = 27;
+const int BUZZER = 25;
+
+void setup() {
+  pinMode(PIR, INPUT);
+  pinMode(BUZZER, OUTPUT);
+}
+
+void loop() {
+  if (digitalRead(PIR) == HIGH) {
+    digitalWrite(BUZZER, HIGH);
+    delay(3000);
+    digitalWrite(BUZZER, LOW);
+  }
+  delay(100);
+}`},
+{t:"Barriera automatica con servo",tipo:"Attuatore",liv:"Medio",
+ d:"Un sensore a ultrasuoni misura la distanza: se un oggetto è sotto i 15 cm, il servo alza la barriera.",
+ comp:["ESP32 DevKit","Sensore HC-SR04","Servo SG90","2 resistenze (1 kΩ e 2 kΩ)","Libreria ESP32Servo"],
+ pin:[["TRIG","GPIO 5"],["ECHO","GPIO 18 tramite partitore"],["Servo segnale","GPIO 13"],["HC-SR04 e servo VCC","VIN (5 V)"]],
+ nota:"L’uscita ECHO dell’HC-SR04 è a 5 V: abbassala a circa 3,3 V con un partitore (1 kΩ verso il pin, 2 kΩ verso GND). Se il servo fa riavviare la scheda, alimentalo con una fonte da 5 V separata e unisci le masse.",
+ code:`#include <ESP32Servo.h>
+
+const int TRIG = 5, ECHO = 18;
+Servo barriera;
+
+long distanzaCm() {
+  digitalWrite(TRIG, LOW);  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH); delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+  return pulseIn(ECHO, HIGH, 30000) * 0.034 / 2;
+}
+
+void setup() {
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+  barriera.attach(13);
+  barriera.write(0);
+}
+
+void loop() {
+  long d = distanzaCm();
+  barriera.write((d > 0 && d < 15) ? 90 : 0);
+  delay(100);
+}`},
+{t:"Irrigazione automatica",tipo:"Attuatore",liv:"Medio",
+ d:"Un sensore di umidità del terreno controlla la pianta e, se è asciutta, il relè avvia una piccola pompa per cinque secondi.",
+ comp:["ESP32 DevKit","Sensore di umidità del suolo (analogico)","Modulo relè","Mini pompa 5 V con tubo","Alimentazione separata per la pompa"],
+ pin:[["Sensore AO","GPIO 34"],["Sensore VCC","3V3"],["Relè IN","GPIO 26"],["Relè VCC","VIN (5 V)"]],
+ nota:"Usa pin ADC1 come il GPIO 34: i pin ADC2 non funzionano con il Wi-Fi attivo. Calibra la soglia SECCO leggendo il valore con il sensore in aria e poi nell’acqua.",
+ code:`const int SENSORE = 34;
+const int POMPA = 26;
+const int SECCO = 2800;   // valore sopra cui il terreno è asciutto
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(POMPA, OUTPUT);
+  digitalWrite(POMPA, LOW);
+}
+
+void loop() {
+  int valore = analogRead(SENSORE);
+  Serial.println(valore);
+  if (valore > SECCO) {
+    digitalWrite(POMPA, HIGH);
+    delay(5000);
+    digitalWrite(POMPA, LOW);
+  }
+  delay(60000);   // controlla ogni minuto
+}`},
+{t:"Luce notturna con fotoresistenza",tipo:"Sensore",liv:"Facile",
+ d:"Una fotoresistenza analogica misura la luce ambiente: quando scende il buio, l’ESP32 accende un LED.",
+ comp:["ESP32 DevKit","Modulo fotoresistenza analogico a 3 pin (uscita AO)","LED","Resistenza da 220 Ω per il LED"],
+ pin:[["Sensore VCC","3V3"],["Sensore AO","GPIO 35"],["Sensore GND","GND"],["LED (+) con resistenza","GPIO 23"]],
+ nota:"Usa un pin ADC1 come il GPIO 35. Alcuni moduli danno un valore più alto con più luce, altri il contrario: stampa il valore sul monitor seriale e regola la soglia BUIO. Con una fotoresistenza nuda, collegala in serie a una resistenza da 10 kΩ e leggi il punto centrale.",
+ code:`const int LDR = 35;
+const int LED = 23;
+const int BUIO = 1500;   // soglia da tarare (0-4095)
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+}
+
+void loop() {
+  int luce = analogRead(LDR);
+  Serial.println(luce);
+  digitalWrite(LED, luce < BUIO ? HIGH : LOW);
+  delay(200);
+}`}
+];
+const filtri=[["Tutti",()=>true],["Sensori",p=>p.tipo==="Sensore"],["Attuatori",p=>p.tipo==="Attuatore"],["Facili",p=>p.liv==="Facile"]];
+const fEl=document.getElementById("filtri"),gEl=document.getElementById("griglia");
+function el(tag,txt,cls){const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;if(cls)e.className=cls;return e}
+function disegna(i){
+  gEl.replaceChildren();
+  const ind=document.getElementById("indice");ind.replaceChildren();
+  progetti.filter(filtri[i][1]).forEach(p=>{
+    const n=progetti.indexOf(p)+1;
+    const li=el("li"),lk=el("a",p.t);lk.href="#progetto-"+n;li.append(lk,el("small",p.tipo+", "+p.liv.toLowerCase()));ind.append(li);
+    const a=el("article");a.dataset.tipo=p.tipo;a.id="progetto-"+n;
+    a.append(el("h2",p.t));
+    const m=el("div",undefined,"meta");m.append(el("span",p.tipo,"tag"),el("span",p.liv,"tag"));a.append(m);
+    a.append(el("p",p.d));
+    a.append(el("h3","Componenti"));
+    const ul=el("ul");p.comp.forEach(c=>ul.append(el("li",c)));a.append(ul);
+    a.append(el("h3","Collegamenti"));
+    const s=el("div",undefined,"scroll"),tb=el("table");
+    const hr=tb.insertRow();hr.append(el("th","Modulo"),el("th","ESP32"));
+    p.pin.forEach(r=>{const tr=tb.insertRow();tr.append(el("td",r[0]),el("td",r[1]))});
+    s.append(tb);a.append(s);
+    a.append(el("div",p.nota,"nota"));
+    const dt=el("details");dt.append(el("summary","Mostra il codice"));
+    const pre=el("pre");pre.append(el("code",p.code));dt.append(pre);a.append(dt);
+    gEl.append(a);
+  });
+}
+filtri.forEach((f,i)=>{
+  const b=el("button",f[0],"chip");b.type="button";b.setAttribute("aria-pressed",i===0);
+  b.onclick=()=>{[...fEl.children].forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");disegna(i)};
+  fEl.append(b);
+});
+disegna(0);
+</script>
+</body>
+</html>

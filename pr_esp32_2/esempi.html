@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheda 5 · Esempi pratici — ESP32 + MicroPython</title>
+<meta name="description" content="Esempi pratici con ESP32 e MicroPython: blink del LED integrato, LED su breadboard con resistenza, deep sleep con risveglio da pulsante e web server Microdot.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">ESP</span>
+      <span>ESP32 · MicroPython<small>Guida passo-passo</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigazione principale">
+      <a href="index.html">Home</a>
+      <a href="teoria.html">Teoria</a>
+      <a href="configurazione.html">Configurazione</a>
+      <a href="rete.html">Rete</a>
+      <a href="micropython.html">MicroPython</a>
+      <a href="esempi.html" aria-current="page">Esempi</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="index.html">Home</a> / Scheda 5 — Esempi pratici</p>
+
+  <div class="page-grid">
+    <aside class="side">
+      <h4>In questa scheda</h4>
+      <a href="#blink">1. Blink del LED integrato</a>
+      <a href="#breadboard">2. LED su breadboard</a>
+      <a href="#pwm">3. Dissolvenza PWM (bonus)</a>
+      <a href="#deep-sleep">4. Deep sleep e pulsante</a>
+      <a href="#web-server">5. Web server con Microdot</a>
+      <a href="#fine">Conclusione</a>
+    </aside>
+
+    <div>
+      <h1>Esempi pratici</h1>
+      <p class="lead">
+        Dalla teoria al mondo fisico. Ogni esempio è autonomo e include componenti, cablaggio
+        (quando serve) e codice commentato. Puoi eseguirli con
+        <code class="inline">mpremote connect COM3 run esempio.py</code>.
+      </p>
+
+      <!-- 1 BLINK -->
+      <h2 id="blink">1. Blink del LED integrato</h2>
+      <p>
+        Il classico "Hello World" dell'hardware. La maggior parte delle schede ESP32 ha un LED
+        integrato collegato al <strong>GPIO2</strong> (fai riferimento alla serigrafia della tua
+        scheda: su alcune varianti il LED è su un pin diverso o è un LED RGB indirizzabile).
+      </p>
+
+      <h3>Componenti</h3>
+      <div class="chips">
+        <span class="chip">Scheda ESP32</span>
+        <span class="chip">Cavo USB dati</span>
+        <span class="chip">Nessun componente extra</span>
+      </div>
+
+      <div class="code-head"><span>blink.py</span></div>
+      <pre><code>from machine import Pin
+import time
+
+led = Pin(2, Pin.OUT)
+
+while True:
+    led.value(not led.value())   # inverte lo stato attuale
+    time.sleep(0.5)              # attesa di 0,5 secondi</code></pre>
+
+      <h3>Cosa succede</h3>
+      <ul>
+        <li><code class="inline">Pin(2, Pin.OUT)</code> configura il GPIO2 come <strong>uscita</strong>.</li>
+        <li><code class="inline">led.value(not led.value())</code> legge il valore e lo inverte: acceso → spento → acceso.</li>
+        <li><code class="inline">time.sleep(0.5)</code> introduce un ritardo in secondi (accetta anche frazioni).</li>
+      </ul>
+
+      <div class="code-head"><span>Trasferisci ed esegui</span></div>
+      <pre class="term"><code>mpremote connect COM3 run blink.py</code></pre>
+      <p class="small muted">Per fermarlo: <kbd>Ctrl</kbd>+<kbd>C</kbd>. Con <code class="inline">run</code> lo script non viene salvato sulla scheda: sparisce al reset.</p>
+
+      <div class="callout tip">
+        <span class="tag">Rendilo permanente</span>
+        <p>Copia il file come <code class="inline">main.py</code> e verrà eseguito automaticamente ad ogni avvio: <code class="inline">mpremote connect COM3 fs cp blink.py :main.py</code>.</p>
+      </div>
+
+      <!-- 2 BREADBOARD -->
+      <h2 id="breadboard">2. LED su breadboard</h2>
+      <p>
+        Ora un LED <strong>esterno</strong>, per imparare il cablaggio. Serve una resistenza in serie:
+        senza di essa il LED (e potenzialmente il pin) può danneggiarsi.
+      </p>
+
+      <h3>Componenti</h3>
+      <div class="chips">
+        <span class="chip">Scheda ESP32</span>
+        <span class="chip">Breadboard (400 o 830 punti)</span>
+        <span class="chip">LED 5 mm</span>
+        <span class="chip">Resistenza 220 Ω</span>
+        <span class="chip">3 jumper maschio-maschio</span>
+      </div>
+
+      <div class="callout info">
+        <span class="tag">Come riconoscere il LED</span>
+        <p>La gamba più <strong>lunga</strong> è l'<strong>anodo</strong> (+), quella più corta è il
+        <strong>catodo</strong> (−). Da collegare: anodo verso il GPIO, catodo verso GND.</p>
+      </div>
+
+      <h3>Cablaggio (in ordine)</h3>
+      <ol class="steps">
+        <li><strong>Stacca l'USB</strong> prima di cambiare i fili.</li>
+        <li><strong>Inserisci il LED</strong> sulla breadboard: gamba lunga e gamba corta su due file (colonne) diverse.</li>
+        <li><strong>Collega il GPIO2</strong> della ESP32 a un'estremità della resistenza da 220 Ω (filo giallo).</li>
+        <li><strong>Collega l'altra estremità della resistenza</strong> alla stessa fila della gamba lunga (+) del LED.</li>
+        <li><strong>Collega la gamba corta (−) del LED</strong> al pin <strong>GND</strong> della ESP32 (filo nero).</li>
+        <li><strong>Controlla la catena:</strong> GPIO2 → resistenza → anodo → LED → catodo → GND.</li>
+        <li><strong>Ricollega l'USB</strong> ed esegui lo script: il LED lampeggia.</li>
+      </ol>
+
+      <div class="callout warn">
+        <span class="tag">Verifica sempre</span>
+        <p>Doppio controllo prima di alimentare: un corto tra 5V/3.3V e GND può danneggiare la scheda.
+        Ogni GPIO può erogare in sicurezza ~40 mA.</p>
+      </div>
+
+      <p>Il codice è identico al blink: cambia solo il pin se scegli un GPIO diverso. Ad esempio, su <strong>GPIO2</strong>:</p>
+      <div class="code-head"><span>led_breadboard.py</span></div>
+      <pre><code>from machine import Pin
+import time
+
+# Cambia 2 con il GPIO a cui hai collegato la resistenza
+# (evita i pin della flash: 6-11, 16, 17)
+led = Pin(2, Pin.OUT)
+
+while True:
+    led.on()        # 3.3 V sull'anodo: LED acceso
+    time.sleep(1)
+    led.off()       # 0 V: LED spento
+    time.sleep(1)</code></pre>
+      <p class="small muted"><code class="inline">led.on()</code> / <code class="inline">led.off()</code> sono scorciatoie equivalenti a <code class="inline">led.value(1)</code> / <code class="inline">led.value(0)</code>.</p>
+
+      <!-- 3 PWM -->
+      <h2 id="pwm">3. Dissolvenza PWM (bonus)</h2>
+      <p>
+        Con lo stesso circuito puoi far <strong>variare la luminosità</strong> modulando il duty cycle
+        del PWM. Il modulo è <code class="inline">machine.PWM</code>.
+      </p>
+      <div class="code-head"><span>fade.py</span></div>
+      <pre><code>from machine import Pin, PWM
+import time
+
+led = PWM(Pin(2), freq=1000)   # 1 kHz
+
+while True:
+    for duty in range(0, 1024, 8):   # dissolvenza in
+        led.duty(duty)
+        time.sleep_ms(5)
+    for duty in range(1023, -1, -8): # dissolvenza out
+        led.duty(duty)
+        time.sleep_ms(5)</code></pre>
+      <p class="small muted">Promemoria dalla teoria: aumentando <code class="inline">freq</code> fino a 40 MHz, la risoluzione del duty (qui 0–1023) diminuisce.</p>
+
+      <!-- 4 DEEP SLEEP -->
+      <h2 id="deep-sleep">4. Deep sleep e risveglio con pulsante</h2>
+      <p>
+        Il deep sleep riduce al minimo i consumi. Questo esempio mette la scheda a dormire e la
+        risveglia premendo un <strong>pulsante sul GPIO4</strong>.
+      </p>
+
+      <h3>Componenti</h3>
+      <div class="chips">
+        <span class="chip">Scheda ESP32</span>
+        <span class="chip">Pulsante (tact switch)</span>
+        <span class="chip">2 jumper</span>
+      </div>
+      <p class="small muted">Il pulsante collega il GPIO4 a GND; il <strong>pull-up interno</strong> mantiene il pin alto quando il pulsante è rilasciato.</p>
+
+      <div class="code-head"><span>sleep.py</span></div>
+      <pre><code>import machine
+import esp32
+
+pin = machine.Pin(4, machine.Pin.IN, machine.Pin.PULL_UP)
+
+# Risveglio quando il pin va a livello basso (pulsante premuto)
+esp32.wake_on_ext0(pin=pin, level=esp32.WAKEUP_ALL_LOW)
+
+print("Vado in deep sleep, premi il pulsante su GPIO4 per svegliarmi")
+machine.deepsleep()</code></pre>
+
+      <h3>Come funziona</h3>
+      <ul>
+        <li><code class="inline">machine.Pin(4, Pin.IN, Pin.PULL_UP)</code> imposta il GPIO4 come ingresso con pull-up interno.</li>
+        <li><code class="inline">esp32.wake_on_ext0(...)</code> configura il risveglio da segnale esterno (<code class="inline">WAKEUP_ALL_LOW</code> = sveglia su livello basso).</li>
+        <li><code class="inline">machine.deepsleep()</code> spegne la scheda fino al risveglio; al risveglio è un <strong>reset completo</strong>.</li>
+      </ul>
+
+      <figure>
+        <img src="assets/images/schema.png" alt="Schema di collegamento del pulsante sul GPIO4">
+        <figcaption>Schema di collegamento del pulsante/resistenza al GPIO4 (vedi <code class="inline">examples/step4/schema.png</code>).</figcaption>
+      </figure>
+
+      <div class="callout info">
+        <span class="tag">Con risveglio temporizzato</span>
+        <p>Se preferisci un risveglio dopo un tempo fisso in millisecondi:
+        <code class="inline">machine.deepsleep(10000)</code> dorme 10 secondi e poi riparte da capo.</p>
+      </div>
+
+      <div class="callout tip">
+        <span class="tag">Perché è ripartito da capo?</span>
+        <p>Dopo il deep sleep l'ESP32 esegue un reset completo. Usa
+        <code class="inline">machine.reset_cause()</code> per distinguere accensione e risveglio, e
+        <code class="inline">esp32.gpio_deep_sleep_hold(True)</code> (con <code class="inline">hold=True</code> sui pin)
+        per mantenere i livelli logici durante il sonno.</p>
+      </div>
+
+      <!-- 5 WEB SERVER -->
+      <h2 id="web-server">5. Web server con Microdot</h2>
+      <p>
+        Trasformiamo l'ESP32 in un piccolo server web. <strong>Flask non gira su MicroPython</strong>:
+        usiamo <strong>Microdot</strong>, che ha una sintassi molto simile.
+      </p>
+
+      <h3>Requisiti</h3>
+      <ul>
+        <li>Firmware MicroPython flashato (scheda 2).</li>
+        <li>File <code class="inline">microdot.py</code> copiato sulla scheda (disponibile in <code class="inline">examples/step3/microdot/</code>).</li>
+        <li>Rete Wi-Fi <strong>a 2.4 GHz</strong> (scheda 3).</li>
+      </ul>
+
+      <div class="code-head"><span>web_server.py</span></div>
+      <pre><code>from microdot import Microdot
+import wifi_config
+
+wifi_config.connect_wifi("NOME_RETE", "PASSWORD_RETE")
+
+app = Microdot()
+
+@app.route('/')
+def index(request):
+    return '&lt;html&gt;&lt;body&gt;&lt;h1&gt;CIAO A TUTTI!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;', \
+           200, {'Content-Type': 'text/html'}
+
+app.run(port=80)</code></pre>
+
+      <div class="code-head"><span>Avvio</span></div>
+      <pre class="term"><code>mpremote connect COM3 fs cp web_server.py :web_server.py
+mpremote connect COM3 run web_server.py</code></pre>
+
+      <p>
+        Dopo l'avvio lo script stampa l'indirizzo IP assegnato (da <code class="inline">wlan.ifconfig()</code>):
+        apri quell'indirizzo dal browser di un dispositivo collegato alla <strong>stessa rete Wi-Fi</strong>.
+      </p>
+
+      <h3>Variante con template HTML</h3>
+      <p>
+        Invece di restituire una stringa, Microdot può renderizzare un file template. Nel repository
+        è presente <code class="inline">examples/step3/templates/index.htm</code>:
+      </p>
+      <pre><code>from microdot import Microdot
+from microdot.utemplate import Template
+
+app = Microdot()
+
+@app.route('/')
+def index(request):
+    return Template('index.htm').render(nome='Mondo')</code></pre>
+      <div class="callout info">
+        <span class="tag">Perché Microdot e non Flask</span>
+        <p>Flask richiede CPython completo; Microdot è un micro-framework leggero con API simili
+        (rotte, request, response) e gira su MicroPython. Il repository lo include come libreria
+        sorgente completa in <code class="inline">examples/step3/microdot/</code>.</p>
+      </div>
+
+      <!-- FINE -->
+      <h2 id="fine">Conclusione e prossimi passi</h2>
+      <p>Hai percorso l'intero stack: dalla teoria dell'hardware alla prima applicazione in rete. Da qui puoi esplorare:</p>
+      <div class="grid cols-2">
+        <div class="card"><h4>Sensori I2C/SPI</h4><p class="small">Temperatura, umidità, display OLED: inizia con <code class="inline">i2c.scan()</code>.</p></div>
+        <div class="card"><h4>Controllo remoto</h4><p class="small">Aggiungi rotte a Microdot per accendere/spegnere un LED dal browser.</p></div>
+        <div class="card"><h4>Basso consumo</h4><p class="small">Combina deep sleep e Wi-Fi per nodi a batteria.</p></div>
+        <div class="card"><h4>MQTT / Cloud</h4><p class="small">Pubblica i dati verso broker o piattaforme IoT.</p></div>
+      </div>
+
+      <div class="callout tip">
+        <span class="tag">Risorse</span>
+        <p>
+          <a href="https://docs.micropython.org" target="_blank" rel="noopener">Documentazione MicroPython</a> ·
+          <a href="https://micropython.org/download" target="_blank" rel="noopener">Download firmware</a> ·
+          <a href="https://github.com/miguelgrinberg/microdot" target="_blank" rel="noopener">Repository Microdot</a> ·
+          <a href="../intro/ESP32_MicroPython_IoT_Essentials.pdf">PDF IoT Essentials</a>
+        </p>
+      </div>
+
+      <nav class="pager">
+        <a href="micropython.html"><span class="dir">← Indietro</span>MicroPython</a>
+        <a href="index.html"><span class="dir">Torna all'inizio →</span>Home</a>
+      </nav>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p>Materiale didattico ESP32 + MicroPython · sito statico senza JavaScript</p>
+  <p>
+    <a href="index.html">Home</a> ·
+    <a href="teoria.html">Teoria</a> ·
+    <a href="configurazione.html">Configurazione</a> ·
+    <a href="rete.html">Rete</a> ·
+    <a href="micropython.html">MicroPython</a> ·
+    <a href="esempi.html">Esempi</a>
+  </p>
+</footer>
+
+</body>
+</html>

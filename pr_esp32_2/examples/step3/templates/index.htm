@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matera - I Sassi e la Città della Pietra</title>
+<style>
+    :root {
+        --terra: #c47a3d;
+        --terra-scura: #8a5527;
+        --pietra: #e8dcc8;
+        --pietra-scura: #d4c3a3;
+        --testo: #3a2e1f;
+        --cielo: #4a6b7a;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        background-color: var(--pietra);
+        color: var(--testo);
+        line-height: 1.6;
+    }
+
+    header {
+        background: linear-gradient(135deg, var(--terra-scura), var(--terra));
+        color: #fff;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+        font-size: 3rem;
+        letter-spacing: 2px;
+        margin-bottom: 0.5rem;
+    }
+
+    header p {
+        font-size: 1.2rem;
+        font-style: italic;
+        opacity: 0.9;
+    }
+
+    nav {
+        background-color: var(--testo);
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        padding: 1rem;
+        flex-wrap: wrap;
+    }
+
+    nav a {
+        color: var(--pietra);
+        text-decoration: none;
+        font-weight: bold;
+        letter-spacing: 1px;
+        transition: color 0.3s;
+    }
+
+    nav a:hover {
+        color: var(--terra);
+    }
+
+    main {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    section {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-left: 5px solid var(--terra);
+    }
+
+    section h2 {
+        color: var(--terra-scura);
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        border-bottom: 2px solid var(--pietra-scura);
+        padding-bottom: 0.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .info-card {
+        background-color: var(--pietra);
+        padding: 1.2rem;
+        border-radius: 6px;
+        text-align: center;
+    }
+
+    .info-card .numero {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--terra);
+        display: block;
+    }
+
+    .info-card .etichetta {
+        font-size: 0.9rem;
+        color: var(--testo);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    ul.luoghi {
+        list-style: none;
+        padding: 0;
+    }
+
+    ul.luoghi li {
+        padding: 0.8rem 0;
+        border-bottom: 1px dashed var(--pietra-scura);
+    }
+
+    ul.luoghi li:last-child {
+        border-bottom: none;
+    }
+
+    ul.luoghi strong {
+        color: var(--terra-scura);
+    }
+
+    .citazione {
+        background-color: var(--cielo);
+        color: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+        font-style: italic;
+        font-size: 1.3rem;
+        margin: 2rem 0;
+    }
+
+    footer {
+        text-align: center;
+        padding: 2rem;
+        background-color: var(--testo);
+        color: var(--pietra);
+        font-size: 0.9rem;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Matera</h1>
+    <p>La Città dei Sassi, tra storia e pietra</p>
+</header>
+
+<nav>
+    <a href="#storia">Storia</a>
+    <a href="#sassi">I Sassi</a>
+    <a href="#info">Informazioni</a>
+    <a href="#luoghi">Cosa vedere</a>
+</nav>
+
+<main>
+
+    <section id="storia">
+        <h2>Un po' di storia</h2>
+        <p>Matera è una delle città più antiche del mondo abitate ininterrottamente, con insediamenti che risalgono al Paleolitico. Situata in Basilicata, la città è celebre soprattutto per i suoi Sassi, antichi quartieri scavati nella roccia calcarea, che per secoli hanno rappresentato l'anima più autentica e povera della città, fino a diventare, nel corso del Novecento, un simbolo di riscatto culturale.</p>
+    </section>
+
+    <div class="citazione">
+        "La città più straordinaria del mondo" — così Matera è stata spesso descritta da viaggiatori e artisti che l'hanno visitata nel corso dei secoli.
+    </div>
+
+    <section id="sassi">
+        <h2>I Sassi di Matera</h2>
+        <p>I Sassi sono due rioni storici, il Sasso Barisano e il Sasso Caveoso, caratterizzati da abitazioni scavate direttamente nella roccia. Un tempo simbolo di arretratezza e povertà, tanto da essere definiti "vergogna nazionale" negli anni '50, oggi rappresentano invece un patrimonio architettonico e culturale unico al mondo, recuperato e trasformato in hotel, ristoranti e abitazioni di pregio.</p>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <span class="numero">1993</span>
+                <span class="etichetta">Patrimonio UNESCO</span>
+            </div>
+            <div class="info-card">
+                <span class="numero">2019</span>
+                <span class="etichetta">Capitale della Cultura</span>
+            </div>
+            <div class="info-card">
+                <span class="numero">9.000+</span>
+                <span class="etichetta">Anni di storia</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="info">
+        <h2>Informazioni utili</h2>
+        <ul class="luoghi">
+            <li><strong>Regione:</strong> Basilicata</li>
+            <li><strong>Provincia:</strong> Matera</li>
+            <li><strong>Abitanti:</strong> circa 60.000</li>
+            <li><strong>Periodo consigliato:</strong> primavera e autunno</li>
+        </ul>
+    </section>
+
+    <section id="luoghi">
+        <h2>Cosa vedere</h2>
+        <ul class="luoghi">
+            <li><strong>Cattedrale di Matera</strong> — imponente edificio romanico affacciato sul Sasso Barisano.</li>
+            <li><strong>Chiesa di Santa Maria de Idris</strong> — scavata nella roccia, con affreschi rupestri.</li>
+            <li><strong>Casa Grotta di Vico Solitario</strong> — una tipica abitazione dei Sassi visitabile per capire come si viveva un tempo.</li>
+            <li><strong>Belvedere di Murgia Timone</strong> — punto panoramico ideale per ammirare i Sassi dall'alto, dall'altra parte del canyon della Gravina.</li>
+            <li><strong>Palombaro Lungo</strong> — enorme cisterna sotterranea scavata nella roccia per la raccolta dell'acqua.</li>
+        </ul>
+    </section>
+
+</main>
+
+<footer>
+    <p>Pagina di esempio creata a scopo dimostrativo — Matera, Basilicata, Italia</p>
+</footer>
+
+</body>
+</html>
