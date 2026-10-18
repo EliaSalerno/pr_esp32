@@ -3,226 +3,520 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratorio ESP32 & UART</title>
+    <title>Laboratorio ESP32 & UART - Dashboard Didattica</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            dark: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Inter & MathJax per rendering formule matematiche -->
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #1e293b;
-            --accent-color: #d97706;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-color: #334155;
-            --border-color: #e2e8f0;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 40px;
+        .view-section {
+            transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
         }
 
-        header h1 {
-            color: var(--secondary-color);
-            margin-bottom: 10px;
+        .view-hidden {
+            display: none !important;
+            opacity: 0;
+            transform: translateY(12px);
         }
 
-        header p {
-            color: #64748b;
-            font-size: 1.1rem;
+        .view-visible {
+            display: block !important;
+            opacity: 1;
+            transform: translateY(0);
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 24px;
+        .card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            border-top: 4px solid var(--primary-color);
-            position: relative;
-        }
-
-        .card.accent {
-            border-top-color: var(--accent-color);
-        }
-
-        .badge {
-            position: absolute;
-            top: 24px;
-            right: 24px;
-            background-color: #e0f2fe;
-            color: var(--primary-color);
-            font-size: 0.75rem;
-            font-weight: bold;
-            padding: 4px 10px;
-            border-radius: 20px;
-            text-transform: uppercase;
-        }
-
-        .card.accent .badge {
-            background-color: #fef3c7;
-            color: var(--accent-color);
-        }
-
-        h2 {
-            font-size: 1.25rem;
-            color: var(--secondary-color);
-            margin-top: 0;
-            margin-bottom: 16px;
-            padding-right: 80px;
-        }
-
-        p, ul {
-            font-size: 0.95rem;
-            margin-bottom: 16px;
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        .warning-box {
-            background-color: #fee2e2;
-            border-left: 4px solid #ef4444;
-            padding: 12px;
-            border-radius: 4px;
-            margin: 12px 0;
-            font-size: 0.9rem;
-            color: #991b1b;
-        }
-
-        .code-snippet {
-            background-color: #f1f5f9;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.85rem;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            margin: 10px 0;
-        }
-
-        .questions-box {
-            background-color: #f8fafc;
-            border: 1px dashed var(--primary-color);
-            padding: 12px;
-            border-radius: 6px;
-            margin-top: auto;
-        }
-
-        .questions-box h4 {
-            margin: 0 0 8px 0;
-            font-size: 0.9rem;
-            color: var(--primary-color);
-        }
-
-        .questions-box ul {
-            margin: 0;
-            padding-left: 15px;
-            font-size: 0.85rem;
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.3);
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col justify-between antialiased">
 
-    <header>
-        <h1>Laboratorio di Sistemi & Reti</h1>
-        <p>Analisi della Trasmissione Seriale con ESP32 e Picoscope</p>
+    <!-- HEADER / NAVBAR -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showDashboard()">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-blue-500/30">
+                    UART
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-100 leading-tight">Sistemi & Reti Lab</h1>
+                    <p class="text-xs text-slate-400">ESP32 & Analisi Logica con Picoscope</p>
+                </div>
+            </div>
+            
+            <button id="nav-back-btn" onclick="showDashboard()" class="hidden items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-2 rounded-lg border border-slate-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span>Torna alle Card</span>
+            </button>
+        </div>
     </header>
 
-    <div class="container">
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
 
-        <!-- CARD 1: Teoria Seriale -->
-        <div class="card">
-            <div class="badge">Fondamentale</div>
-            <h2>1. Teoria: Trasmissione Seriale</h2>
-            <p>La comunicazione <strong>UART</strong> è asincrona: non utilizza un segnale di clock condiviso, ma richiede che mittente e ricevente concordino preventivamente la velocità di comunicazione (<strong>Baud Rate</strong>).</p>
-            <p>Un pacchetto dati standard (8-N-1) si compone di:</p>
-            <ul>
-                <li><strong>Bit di Start:</strong> Segnale logico basso (0V) per iniziare la comunicazione.</li>
-                <li><strong>Data Bits:</strong> 8 bit di dati che compongono il carattere.</li>
-                <li><strong>Bit di Stop:</strong> Segnale logico alto (3.3V) per chiudere il pacchetto.</li>
-            </ul>
-        </div>
-
-        <!-- CARD 2: Teoria ESP32 -->
-        <div class="card accent">
-            <div class="badge">Ripasso</div>
-            <h2>2. Teoria: ESP32 e MicroPython</h2>
-            <p>Per comprendere l'hardware dell'ESP32 applicato a questa attività, ricordiamo che:</p>
-            <ul>
-                <li><strong>Logica a 3.3V:</strong> I pin operano rigorosamente tra 0V e 3.3V.</li>
-                <li><strong>Matrice dei pin (GPIO Matrix):</strong> Le periferiche UART non sono vincolate a pin fissi, ma possono essere mappate via software su quasi tutti i pin digitali GPIO (TX e RX configurabili).</li>
-                <li><strong>MicroPython:</strong> Permette di gestire le periferiche hardware di basso livello richiamando apposite classi integrate senza compilazione complessa.</li>
-            </ul>
-        </div>
-
-        <!-- CARD 3: Hardware Necessario -->
-        <div class="card">
-            <div class="badge">Materiali</div>
-            <h2>3. Hardware Necessario</h2>
-            <p>Per lo svolgimento completo dell'esperienza di laboratorio occorrono:</p>
-            <ul>
-                <li><strong>N. 2 Schede ESP32</strong> (una per la trasmissione/analisi, l'altra per la ricezione).</li>
-                <li><strong>N. 1 Picoscope</strong> (o oscilloscopio digitale) con relative sonde.</li>
-                <li><strong>Cavi Dupont</strong> per i collegamenti circuitali tra le schede e la strumentazione.</li>
-                <li><strong>PC</strong> con ambiente di sviluppo MicroPython (es. Thonny IDE).</li>
-            </ul>
-        </div>
-
-        <!-- CARD 4: Svolgimento Attività (Fase 1 e Fase 2) -->
-        <div class="card accent" style="grid-column: span auto;">
-            <div class="badge">Laboratorio</div>
-            <h2>4. Svolgimento delle Fasi</h2>
-            
-            <p><strong>Fase 1: Analisi del segnale con Picoscope</strong></p>
-            <p>Si configura l'ESP32 per inviare ripetutamente un carattere. Collegando il canale del Picoscope al pin TX, si osserva il treno d'impulsi.</p>
-            
-            <div class="warning-box">
-                ⚠️ <strong>Attenzione alla sicurezza strumentale:</strong> Ricorda di utilizzare rigorosamente la soglia logica a <strong>3.3V</strong> sul Picoscope. Evita assolutamente tensioni a 5V per non danneggiare i pin digitali dell'ESP32.
+        <!-- ==================== DASHBOARD VIEW (CARDS SINTETICHE) ==================== -->
+        <div id="dashboard-view" class="view-section view-visible space-y-8">
+            <div class="text-center max-w-2xl mx-auto space-y-2">
+                <h2 class="text-3xl font-extrabold text-white sm:text-4xl">Modulo di Laboratorio UART</h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    Esplora la trasmissione seriale, l'hardware dell'ESP32 e la misurazione dei tempi d'onda al Picoscope. Seleziona un modulo per accedere ai dettagli.
+                </p>
             </div>
 
-            <p><em>Calcolo teorico del tempo:</em> Per ricavare la durata temporale di un singolo bit ($T_{bit}$), si applica la relazione matematica basata sull'inverso della velocità di trasmissione: dividendo $1$ per il Baud Rate impostato si ottiene la durata in secondi del singolo impulso.</p>
+            <!-- GRIGLIA CARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-            <p><strong>Approccio Software (MicroPython):</strong> Non scriviamo codice da copiare, ma richiamiamo le competenze viste in classe. Per lavorare con la seriale in MicroPython è necessario importare la classe <code>UART</code> dal modulo <code>machine</code>. La funzione di inizializzazione richiede di specificare il canale, il baudrate e i pin scelti, ad esempio:</p>
-            
-            <div class="code-snippet">
-                uart = UART(1, baudrate=9600, tx=Pin(17), rx=Pin(16))
+                <!-- CARD 1 -->
+                <div onclick="openDetail('detail-1')" class="card-hover bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between cursor-pointer group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Fondamentale
+                            </span>
+                            <svg class="w-5 h-5 text-slate-600 group-hover:text-blue-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 group-hover:text-blue-400 transition">1. Teoria: Trasmissione Seriale</h3>
+                        <p class="text-slate-400 text-sm line-clamp-3">
+                            Introduzione alla comunicazione asincrona UART, ruolo del Baud Rate e struttura del pacchetto dati (Start, Payload e Stop).
+                        </p>
+                    </div>
+                    <div class="pt-6 mt-4 border-t border-slate-800/80 flex items-center text-xs font-medium text-blue-400">
+                        <span>Apri Dettaglio</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+
+                <!-- CARD 2 -->
+                <div onclick="openDetail('detail-2')" class="card-hover bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between cursor-pointer group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Ripasso
+                            </span>
+                            <svg class="w-5 h-5 text-slate-600 group-hover:text-amber-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 group-hover:text-amber-400 transition">2. Teoria: ESP32 & MicroPython</h3>
+                        <p class="text-slate-400 text-sm line-clamp-3">
+                            Caratteristiche hardware dell'ESP32, limiti di tensione a 3.3V, flessibilità della GPIO Matrix e gestione con MicroPython.
+                        </p>
+                    </div>
+                    <div class="pt-6 mt-4 border-t border-slate-800/80 flex items-center text-xs font-medium text-amber-400">
+                        <span>Apri Dettaglio</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+
+                <!-- CARD 3 -->
+                <div onclick="openDetail('detail-3')" class="card-hover bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between cursor-pointer group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                                Materiali
+                            </span>
+                            <svg class="w-5 h-5 text-slate-600 group-hover:text-sky-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 group-hover:text-sky-400 transition">3. Hardware Necessario</h3>
+                        <p class="text-slate-400 text-sm line-clamp-3">
+                            Elenco sintetico della strumentazione di misura da banco, dei microcontrollori ESP32 e del software di sviluppo occorrenti.
+                        </p>
+                    </div>
+                    <div class="pt-6 mt-4 border-t border-slate-800/80 flex items-center text-xs font-medium text-sky-400">
+                        <span>Apri Dettaglio</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+
+                <!-- CARD 4 -->
+                <div onclick="openDetail('detail-4')" class="card-hover bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between cursor-pointer group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                Laboratorio
+                            </span>
+                            <svg class="w-5 h-5 text-slate-600 group-hover:text-indigo-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 group-hover:text-indigo-400 transition">4. Svolgimento Attività</h3>
+                        <p class="text-slate-400 text-sm line-clamp-3">
+                            Guida operativa per le 2 fasi: Fase 1 (Analisi al Picoscope & calcolo tempi) e Fase 2 (Comunicazione diretta ESP32-ESP32).
+                        </p>
+                    </div>
+                    <div class="pt-6 mt-4 border-t border-slate-800/80 flex items-center text-xs font-medium text-indigo-400">
+                        <span>Apri Dettaglio</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+
             </div>
+        </div>
 
-            <p><strong>Fase 2: Comunicazione tra due ESP32</strong></p>
-            <p>Mantenendo lo stesso approccio concettuale sulle librerie, si collega il pin TX del primo ESP32 al pin RX del secondo. Il secondo dispositivo sfrutterà metodi di lettura condizionale (verificando la presenza di dati nel buffer) per ricevere e decodificare il carattere trasmesso.</p>
+        <!-- ==================== PAGE DETAIL 1: TEORIA SERIALE ==================== -->
+        <div id="detail-1" class="view-section view-hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Fondamentale
+                </span>
+                <span class="text-xs text-slate-500">Modulo 01</span>
+            </div>
+            
+            <h2 class="text-3xl font-extrabold text-slate-100">1. Teoria: Trasmissione Seriale (UART)</h2>
 
-            <div class="questions-box">
-                <h4>Domande di Verifica per la Classe:</h4>
-                <ul>
-                    <li>Come varia visivamente la forma d'onda sul Picoscope se modifichiamo il Baud Rate?</li>
-                    <li>Qual è il ruolo del buffer di ricezione nel secondo ESP32?</li>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 text-slate-300 leading-relaxed">
+                <p>
+                    La comunicazione <strong class="text-slate-100">UART (Universal Asynchronous Receiver-Transmitter)</strong> è un protocollo di comunicazione punto-a-punto di tipo <em>asincrono</em>. A differenza dei protocolli sincroni (come SPI o I2C), non esiste una linea fisica separata dedicata al segnale di clock per sincronizzare la trasmissione dei dati.
+                </p>
+
+                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                    <h4 class="text-sm font-bold text-blue-400 uppercase tracking-wider">L'importanza del Baud Rate</h4>
+                    <p class="text-sm text-slate-400">
+                        Poiché non vi è un clock comune, la scheda trasmettitrice e la scheda ricevente devono accordarsi preventivamente sulla medesima velocità di trasmissione, espressa in <strong class="text-slate-200">Baud Rate</strong> (ovvero il numero di bit trasmessi al secondo, es. 9600 baud o 115200 baud).
+                    </p>
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-100 pt-2">Anatomia della Cornice Dati (Frame UART 8-N-1)</h3>
+                <p>
+                    Quando la linea di trasmissione è a riposo (<em>Idle State</em>), la tensione sul cavo si mantiene a livello logico alto (3.3V). Un singolo pacchetto di comunicazione comprende le seguenti parti:
+                </p>
+
+                <ul class="space-y-3 pl-4 border-l-2 border-slate-700">
+                    <li class="pl-2">
+                        <strong class="text-slate-100">Bit di Start (0V):</strong> Un impulso a livello logico basso della durata precisa di 1 bit che segnala all'hardware ricevente l'imminente arrivo di dati.
+                    </li>
+                    <li class="pl-2">
+                        <strong class="text-slate-100">Data Bits (Payload):</strong> Un blocco solitamente composto da 8 bit di dati contenente il codice binario del carattere trasposto.
+                    </li>
+                    <li class="pl-2">
+                        <strong class="text-slate-100">Bit di Stop (3.3V):</strong> Uno o più bit a livello logico alto che riportano la linea allo stato di riposo e permettono al sistema di prepararsi al frame successivo.
+                    </li>
                 </ul>
             </div>
+
+            <div class="flex justify-between items-center pt-4">
+                <button onclick="showDashboard()" class="text-slate-400 hover:text-slate-200 text-sm flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="openDetail('detail-2')" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                    Modulo Successivo &rarr;
+                </button>
+            </div>
         </div>
 
-    </div>
+        <!-- ==================== PAGE DETAIL 2: TEORIA ESP32 ==================== -->
+        <div id="detail-2" class="view-section view-hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    Ripasso
+                </span>
+                <span class="text-xs text-slate-500">Modulo 02</span>
+            </div>
+            
+            <h2 class="text-3xl font-extrabold text-slate-100">2. Teoria: ESP32 & MicroPython</h2>
 
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 text-slate-300 leading-relaxed">
+                <p>
+                    L'ESP32 è un microcontrollore System-on-Chip (SoC) estremamente versatile ed avanzato. Per svolgere correttamente questa attività è fondamentale ripassare le seguenti caratteristiche hardware e software:
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-amber-400 font-bold text-sm mb-1">Livello Logico a 3.3V</h4>
+                        <p class="text-xs text-slate-400">
+                            I pin GPIO dell'ESP32 lavorano a una tensione massima di 3.3V. A differenza delle schede Arduino tradizionali (5V), l'immissione di tensioni superiori a 3.3V provoca il danneggiamento irreversibile dei pin.
+                        </p>
+                    </div>
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-amber-400 font-bold text-sm mb-1">GPIO Matrix Flessibile</h4>
+                        <p class="text-xs text-slate-400">
+                            I controller UART interni non sono collegati in modo rigido a due soli pin fisici. Attraverso il multiplexer interno dell'ESP32, la porta seriale può essere assegnata via software a quasi qualsiasi coppia di pin GPIO digitali.
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-100 pt-2">Integrazione MicroPython</h3>
+                <p>
+                    In ambiente MicroPython, il controllo dell'hardware si effettua appoggiandosi alle classi fornite dal modulo nativo <code class="text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">machine</code>. 
+                    In particolare, l'interazione con la seriale richiede la classe <code class="text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">UART</code> e la classe <code class="text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">Pin</code>.
+                </p>
+            </div>
+
+            <div class="flex justify-between items-center pt-4">
+                <button onclick="openDetail('detail-1')" class="text-slate-400 hover:text-slate-200 text-sm flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Modulo Precedente</span>
+                </button>
+                <button onclick="openDetail('detail-3')" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                    Modulo Successivo &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== PAGE DETAIL 3: HARDWARE NECESSARIO ==================== -->
+        <div id="detail-3" class="view-section view-hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    Materiali
+                </span>
+                <span class="text-xs text-slate-500">Modulo 03</span>
+            </div>
+            
+            <h2 class="text-3xl font-extrabold text-slate-100">3. Hardware & Strumentazione Necessaria</h2>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                <p class="text-slate-300">
+                    Prima di iniziare l'esercitazione da banco, assicurarsi di avere a disposizione la seguente dotazione per ciascuna postazione di laboratorio:
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 flex items-start space-x-3">
+                        <div class="p-2 bg-sky-500/10 text-sky-400 rounded-lg shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-100 text-sm">2x Schede di Sviluppo ESP32</h4>
+                            <p class="text-xs text-slate-400 mt-1">Una scheda con la funzione di trasmettitore e la seconda con funzione di ricevitore.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 flex items-start space-x-3">
+                        <div class="p-2 bg-sky-500/10 text-sky-400 rounded-lg shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-100 text-sm">1x Picoscope (Oscilloscopio USB)</h4>
+                            <p class="text-xs text-slate-400 mt-1">Completo di sonde per l'analisi e la cattura dei segnali d'onda in tempo reale sul PC.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 flex items-start space-x-3">
+                        <div class="p-2 bg-sky-500/10 text-sky-400 rounded-lg shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-100 text-sm">Cavi Dupont (Maschio/Femmina)</h4>
+                            <p class="text-xs text-slate-400 mt-1">Per effettuare i collegamenti tra i pin GPIO delle schede ESP32 e le clip della sonda.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 flex items-start space-x-3">
+                        <div class="p-2 bg-sky-500/10 text-sky-400 rounded-lg shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-100 text-sm">PC e Thonny IDE</h4>
+                            <p class="text-xs text-slate-400 mt-1">Ambiente di programmazione e caricamento dello script MicroPython e dell'applicazione PicoScope.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-4">
+                <button onclick="openDetail('detail-2')" class="text-slate-400 hover:text-slate-200 text-sm flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Modulo Precedente</span>
+                </button>
+                <button onclick="openDetail('detail-4')" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                    Modulo Successivo &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== PAGE DETAIL 4: SVOLGIMENTO ATTIVITA ==================== -->
+        <div id="detail-4" class="view-section view-hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    Laboratorio
+                </span>
+                <span class="text-xs text-slate-500">Modulo 04</span>
+            </div>
+            
+            <h2 class="text-3xl font-extrabold text-slate-100">4. Guida allo Svolgimento dell'Attività</h2>
+
+            <!-- FASE 1 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                <div class="flex items-center space-x-2 border-b border-slate-800 pb-4">
+                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm">1</span>
+                    <h3 class="text-xl font-bold text-slate-100">FASE 1: Analisi del Segnale al Picoscope</h3>
+                </div>
+
+                <!-- AVVISO SICUREZZA MANDATORIO -->
+                <div class="p-4 bg-rose-950/40 border-l-4 border-rose-500 rounded-r-xl space-y-1">
+                    <div class="flex items-center space-x-2 text-rose-400 font-bold text-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <span>AVVISO FONDAMENTALE DI SICUREZZA STRUMENTALE</span>
+                    </div>
+                    <p class="text-xs text-rose-200/80 leading-relaxed">
+                        Prima di effettuare qualsiasi misura col Picoscope, impostare ed assicurarsi scrupolosamente che la scala delle tensioni sia configurata sul range logico di <strong>3.3V</strong> e NON a 5V per evitare il danneggiamento permanente dei pin dell'ESP32.
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-200 text-base">Calcolo Teorico del Tempo di Bit ($T_{bit}$)</h4>
+                    <p class="text-sm text-slate-400">
+                        Senza utilizzare valori numerici già pronti, ricordiamo la formula teorica ricavata a lezione. Per calcolare il tempo di durata fisica di un singolo bit trasmesso sul cavo ($T_{bit}$), si effettua l'inverso della frequenza di trasmissione espresso in Baud Rate:
+                    </p>
+                    <div class="p-4 bg-slate-950 rounded-xl text-center border border-slate-800 text-blue-400 font-mono text-base">
+                        $$T_{bit} = \frac{1}{\text{Baud Rate}}$$
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Misurando col cursore temporale del Picoscope la larghezza dell'impulso di Start sul grafico, gli studenti dovranno verificare la coincidenza tra il tempo teorico derivato dalla formula ed il tempo reale.
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-200 text-base">Istruzioni Software MicroPython (Trasmettitore)</h4>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Invece di copiare ed incollare script precompilati, fare riferimento alle funzioni spiegate in classe:
+                    </p>
+                    <ul class="list-disc pl-5 text-sm text-slate-400 space-y-2">
+                        <li>Importare dal modulo <code class="text-blue-300">machine</code> le classi <code class="text-blue-300">UART</code> e <code class="text-blue-300">Pin</code>.</li>
+                        <li>Istanziare un oggetto UART specificando l'identificatore del canale, la frequenza <code class="text-blue-300">baudrate</code> e l'assegnazione del pin di trasmissione <code class="text-blue-300">tx</code>. Esempio concettuale:
+                            <div class="mt-2 p-3 bg-slate-950 rounded-lg text-slate-300 font-mono text-xs border border-slate-800">
+                                uart = UART(1, baudrate=9600, tx=Pin(17), rx=Pin(16))
+                            </div>
+                        </li>
+                        <li>Inviare ciclicamente il carattere desiderato tramite il metodo <code class="text-blue-300">.write()</code> della classe UART all'interno di un ciclo <code class="text-blue-300">while True</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- DOMANDE FASE 1 -->
+                <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                    <h5 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Domande Guida per la Classe (Fase 1)</h5>
+                    <ul class="list-disc pl-5 text-xs text-slate-400 space-y-1">
+                        <li>Qual è la durata in microsecondi di ciascun bit rilevata dai cursori del Picoscope?</li>
+                        <li>Perché impostando un Baud Rate maggiore l'impulso sul display diventa più stretto?</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- FASE 2 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                <div class="flex items-center space-x-2 border-b border-slate-800 pb-4">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">2</span>
+                    <h3 class="text-xl font-bold text-slate-100">FASE 2: Comunicazione Diretta Tra due ESP32</h3>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-200 text-base">Collegamento Hardware</h4>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Rimuovere la sonda del Picoscope ed unire le due schede ESP32 tramite i cavi Dupont. Collegare il pin trasmettitore <strong class="text-slate-200">TX</strong> della scheda trasmettitrice al pin ricevitore <strong class="text-slate-200">RX</strong> della scheda ricevente. <strong class="text-amber-400">Ricordarsi sempre di collegare assieme i pin GND delle due schede per stabilire un riferimento di massa comune.</strong>
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-200 text-base">Istruzioni Software MicroPython (Ricevitore)</h4>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Sulla seconda scheda ESP32 (Ricevitore), applicare la logica di ricezione studiata:
+                    </p>
+                    <ul class="list-disc pl-5 text-sm text-slate-400 space-y-2">
+                        <li>Inizializzare l'interfaccia UART con i medesimi parametri di <code class="text-indigo-300">baudrate</code> concordati.</li>
+                        <li>Verificare la presenza di dati in arrivo nel buffer di ricezione tramite la funzione <code class="text-indigo-300">.any()</code>.</li>
+                        <li>Prelevare i byte in ingresso con la funzione <code class="text-indigo-300">.read()</code> e convertirli in caratteri leggibili utilizzando il metodo di decodifica stringa <code class="text-indigo-300">.decode('utf-8')</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- DOMANDE FINALI -->
+                <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                    <h5 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Domande di Verifica Finale</h5>
+                    <ul class="list-disc pl-5 text-xs text-slate-400 space-y-1">
+                        <li>Cosa succede se la scheda ricevente viene configurata ad un Baud Rate diverso da quello della scheda trasmettitrice?</li>
+                        <li>Qual è il compito del buffer di ricezione gestito dalla funzione <code class="text-slate-200">.any()</code>?</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-4">
+                <button onclick="openDetail('detail-3')" class="text-slate-400 hover:text-slate-200 text-sm flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Modulo Precedente</span>
+                </button>
+                <button onclick="showDashboard()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                    Concludi e Torna alla Dashboard
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            Laboratorio di Sistemi e Reti &bull; Attività Esperienziale ESP32, MicroPython & Picoscope
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT PER LA GESTIONE DELLA SPA / ROUTING INTERNO -->
+    <script>
+        function hideAllViews() {
+            const views = document.querySelectorAll('.view-section');
+            views.forEach(view => {
+                view.classList.remove('view-visible');
+                view.classList.add('view-hidden');
+            });
+        }
+
+        function showDashboard() {
+            hideAllViews();
+            const dash = document.getElementById('dashboard-view');
+            dash.classList.remove('view-hidden');
+            dash.classList.add('view-visible');
+
+            document.getElementById('nav-back-btn').classList.add('hidden');
+            document.getElementById('nav-back-btn').classList.remove('flex');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openDetail(detailId) {
+            hideAllViews();
+            const target = document.getElementById(detailId);
+            if (target) {
+                target.classList.remove('view-hidden');
+                target.classList.add('view-visible');
+
+                document.getElementById('nav-back-btn').classList.remove('hidden');
+                document.getElementById('nav-back-btn').classList.add('flex');
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Renderizza eventuali formule MathJax
+                if (window.MathJax && window.MathJax.typeset) {
+                    window.MathJax.typeset();
+                }
+            }
+        }
+    </script>
 </body>
 </html>
