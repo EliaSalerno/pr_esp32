@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio ESP32 & UART</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e293b;
+            --accent-color: #d97706;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #334155;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            border-top: 4px solid var(--primary-color);
+            position: relative;
+        }
+
+        .card.accent {
+            border-top-color: var(--accent-color);
+        }
+
+        .badge {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background-color: #e0f2fe;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .card.accent .badge {
+            background-color: #fef3c7;
+            color: var(--accent-color);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            color: var(--secondary-color);
+            margin-top: 0;
+            margin-bottom: 16px;
+            padding-right: 80px;
+        }
+
+        p, ul {
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .warning-box {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 12px 0;
+            font-size: 0.9rem;
+            color: #991b1b;
+        }
+
+        .code-snippet {
+            background-color: #f1f5f9;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+        }
+
+        .questions-box {
+            background-color: #f8fafc;
+            border: 1px dashed var(--primary-color);
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: auto;
+        }
+
+        .questions-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+
+        .questions-box ul {
+            margin: 0;
+            padding-left: 15px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Laboratorio di Sistemi & Reti</h1>
+        <p>Analisi della Trasmissione Seriale con ESP32 e Picoscope</p>
+    </header>
+
+    <div class="container">
+
+        <!-- CARD 1: Teoria Seriale -->
+        <div class="card">
+            <div class="badge">Fondamentale</div>
+            <h2>1. Teoria: Trasmissione Seriale</h2>
+            <p>La comunicazione <strong>UART</strong> è asincrona: non utilizza un segnale di clock condiviso, ma richiede che mittente e ricevente concordino preventivamente la velocità di comunicazione (<strong>Baud Rate</strong>).</p>
+            <p>Un pacchetto dati standard (8-N-1) si compone di:</p>
+            <ul>
+                <li><strong>Bit di Start:</strong> Segnale logico basso (0V) per iniziare la comunicazione.</li>
+                <li><strong>Data Bits:</strong> 8 bit di dati che compongono il carattere.</li>
+                <li><strong>Bit di Stop:</strong> Segnale logico alto (3.3V) per chiudere il pacchetto.</li>
+            </ul>
+        </div>
+
+        <!-- CARD 2: Teoria ESP32 -->
+        <div class="card accent">
+            <div class="badge">Ripasso</div>
+            <h2>2. Teoria: ESP32 e MicroPython</h2>
+            <p>Per comprendere l'hardware dell'ESP32 applicato a questa attività, ricordiamo che:</p>
+            <ul>
+                <li><strong>Logica a 3.3V:</strong> I pin operano rigorosamente tra 0V e 3.3V.</li>
+                <li><strong>Matrice dei pin (GPIO Matrix):</strong> Le periferiche UART non sono vincolate a pin fissi, ma possono essere mappate via software su quasi tutti i pin digitali GPIO (TX e RX configurabili).</li>
+                <li><strong>MicroPython:</strong> Permette di gestire le periferiche hardware di basso livello richiamando apposite classi integrate senza compilazione complessa.</li>
+            </ul>
+        </div>
+
+        <!-- CARD 3: Hardware Necessario -->
+        <div class="card">
+            <div class="badge">Materiali</div>
+            <h2>3. Hardware Necessario</h2>
+            <p>Per lo svolgimento completo dell'esperienza di laboratorio occorrono:</p>
+            <ul>
+                <li><strong>N. 2 Schede ESP32</strong> (una per la trasmissione/analisi, l'altra per la ricezione).</li>
+                <li><strong>N. 1 Picoscope</strong> (o oscilloscopio digitale) con relative sonde.</li>
+                <li><strong>Cavi Dupont</strong> per i collegamenti circuitali tra le schede e la strumentazione.</li>
+                <li><strong>PC</strong> con ambiente di sviluppo MicroPython (es. Thonny IDE).</li>
+            </ul>
+        </div>
+
+        <!-- CARD 4: Svolgimento Attività (Fase 1 e Fase 2) -->
+        <div class="card accent" style="grid-column: span auto;">
+            <div class="badge">Laboratorio</div>
+            <h2>4. Svolgimento delle Fasi</h2>
+            
+            <p><strong>Fase 1: Analisi del segnale con Picoscope</strong></p>
+            <p>Si configura l'ESP32 per inviare ripetutamente un carattere. Collegando il canale del Picoscope al pin TX, si osserva il treno d'impulsi.</p>
+            
+            <div class="warning-box">
+                ⚠️ <strong>Attenzione alla sicurezza strumentale:</strong> Ricorda di utilizzare rigorosamente la soglia logica a <strong>3.3V</strong> sul Picoscope. Evita assolutamente tensioni a 5V per non danneggiare i pin digitali dell'ESP32.
+            </div>
+
+            <p><em>Calcolo teorico del tempo:</em> Per ricavare la durata temporale di un singolo bit ($T_{bit}$), si applica la relazione matematica basata sull'inverso della velocità di trasmissione: dividendo $1$ per il Baud Rate impostato si ottiene la durata in secondi del singolo impulso.</p>
+
+            <p><strong>Approccio Software (MicroPython):</strong> Non scriviamo codice da copiare, ma richiamiamo le competenze viste in classe. Per lavorare con la seriale in MicroPython è necessario importare la classe <code>UART</code> dal modulo <code>machine</code>. La funzione di inizializzazione richiede di specificare il canale, il baudrate e i pin scelti, ad esempio:</p>
+            
+            <div class="code-snippet">
+                uart = UART(1, baudrate=9600, tx=Pin(17), rx=Pin(16))
+            </div>
+
+            <p><strong>Fase 2: Comunicazione tra due ESP32</strong></p>
+            <p>Mantenendo lo stesso approccio concettuale sulle librerie, si collega il pin TX del primo ESP32 al pin RX del secondo. Il secondo dispositivo sfrutterà metodi di lettura condizionale (verificando la presenza di dati nel buffer) per ricevere e decodificare il carattere trasmesso.</p>
+
+            <div class="questions-box">
+                <h4>Domande di Verifica per la Classe:</h4>
+                <ul>
+                    <li>Come varia visivamente la forma d'onda sul Picoscope se modifichiamo il Baud Rate?</li>
+                    <li>Qual è il ruolo del buffer di ricezione nel secondo ESP32?</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

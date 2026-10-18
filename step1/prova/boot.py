@@ -35,6 +35,6 @@ def connect_wifi(ssid, password, timeout=15):
     return wlan
 
 if __name__ == "__main__":
-    SSID = "Greppi-5G"
+    SSID = "Greppi-5"
     PASSWORD = "withProxy"
     connect_wifi(SSID, PASSWORD)
